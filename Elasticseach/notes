@@ -42,14 +42,14 @@ wget http://media.sundog-soft.com/es8/shakes-mapping.json
 
 --Creating the index using a given mapping (schema)
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPUT https://guide-to-es.es.us-central1.gcp.cloud.es.io/shakespare --data-binary @shakes-mapping.json
+curl -u user:password -H "Content-Type:application/json" -XPUT https://guide-to-es.es.us-central1.gcp.cloud.es.io/shakespare --data-binary @shakes-mapping.json
 
 --Indexing (bulk indexing)
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPUT https://guide-to-es.es.us-central1.gcp.cloud.es.io/shakespare/_bulk --data-binary @shakespeare_8.0.json
+curl -u user:password -H "Content-Type:application/json" -XPUT https://guide-to-es.es.us-central1.gcp.cloud.es.io/shakespare/_bulk --data-binary @shakespeare_8.0.json
 
 --Searching
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET https://guide-to-es.es.us-central1.gcp.cloud.es.io/shakespare/_search?pretty -d '
+curl -u user:password -H "Content-Type:application/json" -XGET https://guide-to-es.es.us-central1.gcp.cloud.es.io/shakespare/_search?pretty -d '
 {
     "query":{
         "match_phrase": {
@@ -111,7 +111,7 @@ Token Filter: Lowercasing, stemming, synonyms, stopwords
 
 ### Creating index movies with mappings
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPUT https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/ -d '
+curl -u user:password -H "Content-Type:application/json" -XPUT https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/ -d '
 {
     "mappings": {
         "properties": {
@@ -122,31 +122,31 @@ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPU
     }
 }' 
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_mapping
+curl -u user:password -H "Content-Type:application/json" -XGET https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_mapping
 
 ### insert movie
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPUT https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_doc/109407?pretty -d '
+curl -u user:password -H "Content-Type:application/json" -XPUT https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_doc/109407?pretty -d '
 {
     "genre": ["IMAX", "Sci-Fi"],
     "title": "Interstellar",
     "year": 2014
 }'
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty
+curl -u user:password -H "Content-Type:application/json" -XGET https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty
 
 
 ## Bulk import using json format( note that the file contains the index name where to insert into)
 
 wget http://media.sundog-soft.com/es8/movies.json
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPUT https://guide-to-es.es.us-central1.gcp.cloud.es.io/_bulk?pretty --data-binary @movies.json
+curl -u user:password -H "Content-Type:application/json" -XPUT https://guide-to-es.es.us-central1.gcp.cloud.es.io/_bulk?pretty --data-binary @movies.json
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty
+curl -u user:password -H "Content-Type:application/json" -XGET https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty
 
 ## Upading a document (not doc are immutable, just a work around)
 
 -- trying to index a new doc using an existing _id (will treat it as an update)
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPUT https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_doc/109407?pretty -d '
+curl -u user:password -H "Content-Type:application/json" -XPUT https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_doc/109407?pretty -d '
 {
     "genre": ["IMAX", "Sci-Fi"],
     "title": "Interstellar foo",
@@ -154,7 +154,7 @@ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPU
 }'
 
 -- partial update (POST method)
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPOST https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_update/109407?pretty -d '
+curl -u user:password -H "Content-Type:application/json" -XPOST https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_update/109407?pretty -d '
 {
     "doc": {
         "title": "Interstellar"
@@ -163,17 +163,17 @@ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPO
 
 ## Deleting a doc
 -- let's first get the doc _id for the Dark nigth
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?q=Dark
+curl -u user:password -H "Content-Type:application/json" -XGET https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?q=Dark
 
 --deleting
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XDELETE https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_doc/58559?pretty
+curl -u user:password -H "Content-Type:application/json" -XDELETE https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_doc/58559?pretty
 
 ### Exercice
 
 Insert, update, and then delete a movie fo your choice into the movies index
 
 --inserting the movie
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPUT https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_doc/1?pretty -d '
+curl -u user:password -H "Content-Type:application/json" -XPUT https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_doc/1?pretty -d '
 {
     "genre": ["Action", "Sci-Fi"],
     "title": "Rome must die",
@@ -181,10 +181,10 @@ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPU
 }'
 
 --checking if all went well
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_doc/1?pretty 
+curl -u user:password -H "Content-Type:application/json" -XGET https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_doc/1?pretty 
 
 --updating
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPOST https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_update/1?pretty -d '
+curl -u user:password -H "Content-Type:application/json" -XPOST https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_update/1?pretty -d '
 {
     "doc": {
         "year": 2008
@@ -192,7 +192,7 @@ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPO
 }'
 
 --deleting
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XDELETE https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_doc/1?pretty
+curl -u user:password -H "Content-Type:application/json" -XDELETE https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_doc/1?pretty
 
 ## Optimistic Concurrency control
 the sequence number _seq_no and primary term _primary_term
@@ -200,10 +200,10 @@ the sequence number _seq_no and primary term _primary_term
 Use retry_on_conflicts=N to automatically rety()
 
 --let's get the _seq_no and _primary_term
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_doc/109487?pretty
+curl -u user:password -H "Content-Type:application/json" -XGET https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_doc/109487?pretty
 
 -- updating using concurrency control manually
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPUT "https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_doc/109487?if_seq_no=3&if_primary_term=1" -d '
+curl -u user:password -H "Content-Type:application/json" -XPUT "https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_doc/109487?if_seq_no=3&if_primary_term=1" -d '
 {
     "title" : "Interstellar Foo",
     "year" : 2014,
@@ -211,7 +211,7 @@ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPU
 }'
 
 -- updating using concurrency control with retry_on_conflict
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPOST "https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_update/109487?retry_on_conflict=5" -d '
+curl -u user:password -H "Content-Type:application/json" -XPOST "https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_update/109487?retry_on_conflict=5" -d '
 {
     "doc" : {
         "title": "Interstellar Typo"
@@ -224,7 +224,7 @@ keyword type for exact matches
 text type for partial matches
 
 --partial match examples
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty" -d '
+curl -u user:password -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty" -d '
 {
     "query": {
         "match": {
@@ -233,7 +233,7 @@ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGE
     }
 }'
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty" -d '
+curl -u user:password -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty" -d '
 {
     "query": {
         "match_phrase": {
@@ -243,9 +243,9 @@ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGE
 }'
 
 -- delete the index movies and map it with new setting
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XDELETE "https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/"
+curl -u user:password -H "Content-Type:application/json" -XDELETE "https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/"
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPUT "https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/" -d '
+curl -u user:password -H "Content-Type:application/json" -XPUT "https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/" -d '
 {
     "mappings": {
         "properties": {
@@ -257,9 +257,9 @@ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPU
     }
 }'
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPUT "https://guide-to-es.es.us-central1.gcp.cloud.es.io/_bulk?pretty" --data-binary @movies.json
+curl -u user:password -H "Content-Type:application/json" -XPUT "https://guide-to-es.es.us-central1.gcp.cloud.es.io/_bulk?pretty" --data-binary @movies.json
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty" -d '
+curl -u user:password -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty" -d '
 {
     "query": {
         "match_phrase": {
@@ -271,7 +271,7 @@ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGE
 ## Data modelling
 
 ### Parent/child relationship
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPUT "https://guide-to-es.es.us-central1.gcp.cloud.es.io/series" -d '
+curl -u user:password -H "Content-Type:application/json" -XPUT "https://guide-to-es.es.us-central1.gcp.cloud.es.io/series" -d '
 {
     "mappings": {
         "properties": {
@@ -285,9 +285,9 @@ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPU
 
 wget http://media.sundog-soft.com/es8/series.json
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPUT "https://guide-to-es.es.us-central1.gcp.cloud.es.io/_bulk?pretty" --data-binary @series.json
+curl -u user:password -H "Content-Type:application/json" -XPUT "https://guide-to-es.es.us-central1.gcp.cloud.es.io/_bulk?pretty" --data-binary @series.json
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/series/_search?pretty" -d '
+curl -u user:password -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/series/_search?pretty" -d '
 {
     "query": {
         "has_parent": {
@@ -301,7 +301,7 @@ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGE
     }
 }'
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/series/_search?pretty" -d '
+curl -u user:password -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/series/_search?pretty" -d '
 {
     "query": {
         "has_child": {
@@ -321,7 +321,7 @@ Note that the field will be keyword (no analyzer), limitting the searching capab
 
 1.
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPUT "https://guide-to-es.es.us-central1.gcp.cloud.es.io/demo-default/_doc/1" -d'{
+curl -u user:password -H "Content-Type:application/json" -XPUT "https://guide-to-es.es.us-central1.gcp.cloud.es.io/demo-default/_doc/1" -d'{
   "message": "[5592:1:0309/123054.737712:ERROR:child_process_sandbox_support_impl_linux.cc(79)] FontService unique font name matching request did not receive a response.",
   "fileset": {
     "name": "syslog"
@@ -340,19 +340,19 @@ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPU
 
 2.
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/demo-default/_mapping?pretty=true"
+curl -u user:password -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/demo-default/_mapping?pretty=true"
 
 3.
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/_cluster/state?pretty=true" >> es-cluster-state.json
+curl -u user:password -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/_cluster/state?pretty=true" >> es-cluster-state.json
 
 4.
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPUT "https://guide-to-es.es.us-central1.gcp.cloud.es.io/demo-flattened"
+curl -u user:password -H "Content-Type:application/json" -XPUT "https://guide-to-es.es.us-central1.gcp.cloud.es.io/demo-flattened"
 
 5.
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPUT "https://guide-to-es.es.us-central1.gcp.cloud.es.io/demo-flattened/_mapping" -d'{
+curl -u user:password -H "Content-Type:application/json" -XPUT "https://guide-to-es.es.us-central1.gcp.cloud.es.io/demo-flattened/_mapping" -d'{
   "properties": {
     "host": {
       "type": "flattened"
@@ -362,7 +362,7 @@ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPU
 
 6.
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPUT "https://guide-to-es.es.us-central1.gcp.cloud.es.io/demo-flattened/_doc/1" -d'{
+curl -u user:password -H "Content-Type:application/json" -XPUT "https://guide-to-es.es.us-central1.gcp.cloud.es.io/demo-flattened/_doc/1" -d'{
   "message": "[5592:1:0309/123054.737712:ERROR:child_process_sandbox_support_impl_linux.cc(79)] FontService unique font name matching request did not receive a response.",
   "fileset": {
     "name": "syslog"
@@ -380,11 +380,11 @@ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPU
 
 7.
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/demo-flattened/_mapping?pretty=true"
+curl -u user:password -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/demo-flattened/_mapping?pretty=true"
 
 8.
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPOST "https://guide-to-es.es.us-central1.gcp.cloud.es.io/demo-flattened/_update/1" -d'{
+curl -u user:password -H "Content-Type:application/json" -XPOST "https://guide-to-es.es.us-central1.gcp.cloud.es.io/demo-flattened/_update/1" -d'{
     "doc" : {
         "host" : {
           "osVersion": "Bionic Beaver",
@@ -395,7 +395,7 @@ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPO
 
 9.
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/demo-flattened/_search?pretty=true" -d'{
+curl -u user:password -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/demo-flattened/_search?pretty=true" -d'{
   "query": {
     "term": {
       "host": "Bionic Beaver"
@@ -405,7 +405,7 @@ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGE
 
 10.
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/demo-flattened/_search?pretty=true" -d'{
+curl -u user:password -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/demo-flattened/_search?pretty=true" -d'{
   "query": {
     "term": {
       "host.osVersion": "Bionic Beaver"
@@ -415,7 +415,7 @@ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGE
 
 11.
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/demo-flattened/_search?pretty=true" -d'{
+curl -u user:password -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/demo-flattened/_search?pretty=true" -d'{
   "query": {
     "term": {
       "host.osVersion": "Beaver"
@@ -428,7 +428,7 @@ Explicit mapping: execptions when there is a mismatch
 Dynamic mapping: may lead to mapping explosion
 
 1.
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request PUT 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/microservice-logs' \
+curl -u user:password -H "Content-Type:application/json" --request PUT 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/microservice-logs' \
 --data-raw '{
    "mappings": {
        "properties": {
@@ -447,43 +447,43 @@ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --re
 
 3.
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request POST 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/microservice-logs/_doc?pretty' \
+curl -u user:password -H "Content-Type:application/json" --request POST 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/microservice-logs/_doc?pretty' \
 --data-raw '{"timestamp": "2020-04-11T12:34:56.789Z", "service": "XYZ", "host_ip": "10.0.2.15", "port": "15000", "message": "Hello!" }'
 
 4.
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request POST 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/microservice-logs/_doc?pretty' \
+curl -u user:password -H "Content-Type:application/json" --request POST 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/microservice-logs/_doc?pretty' \
 --data-raw '{"timestamp": "2020-04-11T12:34:56.789Z", "service": "XYZ", "host_ip": "10.0.2.15", "port": "NONE", "message": "I am not well!" }'
 
 5.
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request POST 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/microservice-logs/_close'
+curl -u user:password -H "Content-Type:application/json" --request POST 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/microservice-logs/_close'
  
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --location --request PUT 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/microservice-logs/_settings' \
+curl -u user:password -H "Content-Type:application/json" --location --request PUT 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/microservice-logs/_settings' \
 --data-raw '{
    "index.mapping.ignore_malformed": true
 }'
  
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request POST 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/microservice-logs/_open'
+curl -u user:password -H "Content-Type:application/json" --request POST 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/microservice-logs/_open'
 
 6.
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request POST 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/microservice-logs/_doc?pretty' \
+curl -u user:password -H "Content-Type:application/json" --request POST 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/microservice-logs/_doc?pretty' \
 --data-raw '{"timestamp": "2020-04-11T12:34:56.789Z", "service": "XYZ", "host_ip": "10.0.2.15", "port": "NONE", "message": "I am not well!" }'
 
 7. Limitation of ignore malformed with json type
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request POST 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/microservice-logs/_doc?pretty' \
+curl -u user:password -H "Content-Type:application/json" --request POST 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/microservice-logs/_doc?pretty' \
 --data-raw '{"timestamp": "2020-04-11T12:34:56.789Z", "service": "ABC", "host_ip": "10.0.2.15", "port": 12345, "message": {"data": {"received":"here"}}}'
 
 8. This will pass
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request POST 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/microservice-logs/_doc?pretty' \
+curl -u user:password -H "Content-Type:application/json" --request POST 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/microservice-logs/_doc?pretty' \
 --data-raw '{"timestamp": "2020-04-11T12:34:56.789Z", "service": "ABC", "host_ip": "10.0.2.15", "port": 12345, "message": "Received...", "payload": {"data": {"received":"here"}}}'
 
 9. But this will fail (be aware)
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request POST 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/microservice-logs/_doc?pretty' \
+curl -u user:password -H "Content-Type:application/json" --request POST 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/microservice-logs/_doc?pretty' \
 --data-raw '{"timestamp": "2020-04-11T12:34:56.789Z", "service": "ABC", "host_ip": "10.0.2.15", "port": 12345, "message": "Received...", "payload": {"data": {"received": {"even": "more"}}}}'
 
 10.
@@ -491,13 +491,13 @@ thousandone_fields_json=$(echo {1..1001..1} | jq -Rn '( input | split(" ") ) as 
  
 echo "$thousandone_fields_json"
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --location --request PUT 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/big-objects'
+curl -u user:password -H "Content-Type:application/json" --location --request PUT 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/big-objects'
 
 -- Error limit exceeded
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request POST 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/big-objects/_doc?pretty' --data-raw "$thousandone_fields_json"
+curl -u user:password -H "Content-Type:application/json" --request POST 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/big-objects/_doc?pretty' --data-raw "$thousandone_fields_json"
 
 -- a solution (but not advised)
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --location --request PUT 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/big-objects/_settings' --data-raw '{
+curl -u user:password -H "Content-Type:application/json" --location --request PUT 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/big-objects/_settings' --data-raw '{
     "index.mapping.total.fields.limit": 1001
 }'
 
@@ -506,14 +506,14 @@ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --lo
 
 /movies/_search?q=+year:>2010+title:trek
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?q=title:star&pretty'
+curl -u user:password -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?q=title:star&pretty'
 
 -- works but may give issue on a web browser (the characters should be encoded)
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?q=+year:>2010+title:trek&pretty'
+curl -u user:password -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?q=+year:>2010+title:trek&pretty'
 
 ## Request body search
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty' -d '
+curl -u user:password -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty' -d '
 {
     "query": {
         "match": {
@@ -526,7 +526,7 @@ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --re
 ask a yes/no question of your data
 Use filters when you can - they are faster and cacheable.
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty' -d '
+curl -u user:password -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty' -d '
 {
     "query": {
         "bool": {
@@ -544,7 +544,7 @@ Both query and filter can be combined
 
 ### Phrase matching
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty' -d '
+curl -u user:password -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty' -d '
 {
     "query": {
         "match_phrase": {
@@ -557,7 +557,7 @@ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --re
 Order matters but you're Ok with some words being in between the terms
 The slop represents how far you're willing to let a term move to satisfy a phrase (in either direction)
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty' -d '
+curl -u user:password -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty' -d '
 {
     "query": {
         "match_phrase": {
@@ -571,7 +571,7 @@ Another example: "quick brown fox" would macth "quick fox" with slop of 1
 ### Proximy query
 Phrase where the words are closer will have higher score
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty' -d '
+curl -u user:password -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty' -d '
 {
     "query": {
         "match_phrase": {
@@ -584,11 +584,11 @@ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --re
 Search for "Star Wars" movies released after 1980, using both a URI search and a request body search
 
 -- won't work as execpted
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?q=+year:>1980+title:star%20wars&pretty'
+curl -u user:password -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?q=+year:>1980+title:star%20wars&pretty'
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?q=%2Byear%3A%3E1980+%2Btitle%3Astar%20wars&pretty'
+curl -u user:password -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?q=%2Byear%3A%3E1980+%2Btitle%3Astar%20wars&pretty'
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty' -d '
+curl -u user:password -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty' -d '
 {
     "query": {
         "bool": {
@@ -603,9 +603,9 @@ Specify "From" and "Size"
 from=0,size=3
 from=3,size=3
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?size=2&from=2&pretty'
+curl -u user:password -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?size=2&from=2&pretty'
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty' -d '
+curl -u user:password -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty' -d '
 {
     "from": 2,
     "size": 2,
@@ -614,15 +614,15 @@ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --re
 
 ### Sorting
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?sort=year&pretty'
+curl -u user:password -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?sort=year&pretty'
 
 -- This gives an error
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?sort=title&pretty'
+curl -u user:password -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?sort=title&pretty'
 
 --Work around, re-index the data with specific mapping to handle the issue
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request DELETE 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies'
+curl -u user:password -H "Content-Type:application/json" --request DELETE 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies'
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPUT https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/ -d '
+curl -u user:password -H "Content-Type:application/json" -XPUT https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/ -d '
 {
     "mappings": {
         "properties": {
@@ -638,14 +638,14 @@ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPU
     }
 }' 
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPUT https://guide-to-es.es.us-central1.gcp.cloud.es.io/_bulk?pretty --data-binary @movies.json
+curl -u user:password -H "Content-Type:application/json" -XPUT https://guide-to-es.es.us-central1.gcp.cloud.es.io/_bulk?pretty --data-binary @movies.json
 
 -- sort it now using title.raw field
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?sort=title.raw&pretty'
+curl -u user:password -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?sort=title.raw&pretty'
 
 ### More on Filters
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty' -d '
+curl -u user:password -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty' -d '
 {
     "query": {
         "bool": {
@@ -659,7 +659,7 @@ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --re
 ### Exercice
 Search for science fiction movies before 1960, sorted by title
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?sort=title.raw&pretty' -d '
+curl -u user:password -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?sort=title.raw&pretty' -d '
 {
     "query": {
         "bool": {
@@ -677,7 +677,7 @@ The "levenshtein edit distance" accounts for:
     deletions of characters (interstellar -- interstelar)
 All of the above have an edit distance of 1
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty' -d '
+curl -u user:password -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty' -d '
 {
     "query": {
         "fuzzy": {
@@ -695,7 +695,7 @@ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --re
 ### Prefix queries on "strings"
 
 -- the year field shoulb a string (text, keyword)
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty' -d '
+curl -u user:password -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty' -d '
 {
     "query": {
         "prefix": {
@@ -705,7 +705,7 @@ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --re
 }'
 
 ### Wildcard queries
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty' -d '
+curl -u user:password -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty' -d '
 {
     "query": {
         "wildcard": {
@@ -717,7 +717,7 @@ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --re
 ### Regex queries
 
 ### Searh as you type
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty' -d '
+curl -u user:password -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty' -d '
 {
     "query": {
         "match_phrase_prefix": {
@@ -741,7 +741,7 @@ create an analyzer
 ### Search as you type 
 1.
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --silent --request POST 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_analyze?pretty' \
+curl -u user:password -H "Content-Type:application/json" --silent --request POST 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_analyze?pretty' \
 --data-raw '{
    "tokenizer" : "standard",
    "filter": [{"type":"edge_ngram", "min_gram": 1, "max_gram": 4}],
@@ -751,7 +751,7 @@ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --si
 
 2.
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request PUT 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/autocomplete' \
+curl -u user:password -H "Content-Type:application/json" --request PUT 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/autocomplete' \
 -d '{
    "mappings": {
        "properties": {
@@ -767,7 +767,7 @@ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --re
 
 3.
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --silent --request POST 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/_reindex?pretty' --data-raw '{
+curl -u user:password -H "Content-Type:application/json" --silent --request POST 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/_reindex?pretty' --data-raw '{
  "source": {
    "index": "movies"
  },
@@ -778,7 +778,7 @@ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --si
 
 4.
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -s --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/autocomplete/_search?pretty' --data-raw '{
+curl -u user:password -H "Content-Type:application/json" -s --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/autocomplete/_search?pretty' --data-raw '{
    "size": 5,
    "query": {
        "multi_match": {
@@ -801,7 +801,7 @@ do
  IFS= read -rsn1 char
  INPUT=$INPUT$char
  echo $INPUT
- curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --silent --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/autocomplete/_search' \
+ curl -u user:password -H "Content-Type:application/json" --silent --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/autocomplete/_search' \
  --data-raw '{
      "size": 5,
      "query": {
@@ -824,7 +824,7 @@ Elasticsearch aggregations can sometimes take te place of hadoop/spark/etc and r
 
 You can even nest aggregations together
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET https://guide-to-es.es.us-central1.gcp.cloud.es.io/ratings/_search?pretty -d '
+curl -u user:password -H "Content-Type:application/json" -XGET https://guide-to-es.es.us-central1.gcp.cloud.es.io/ratings/_search?pretty -d '
 {
     "aggs": {
         "ratings": {
@@ -833,7 +833,7 @@ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGE
     }
 }'
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET https://guide-to-es.es.us-central1.gcp.cloud.es.io/ratings/_search?pretty -d '
+curl -u user:password -H "Content-Type:application/json" -XGET https://guide-to-es.es.us-central1.gcp.cloud.es.io/ratings/_search?pretty -d '
 {
     "query": {
         "match": {
@@ -848,7 +848,7 @@ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGE
 }'
 
 --adding size=0 give only the aggretion result without the matching docs
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/ratings/_search?size=0&pretty" -d '
+curl -u user:password -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/ratings/_search?size=0&pretty" -d '
 {
     "query": {
         "match_phrase": {
@@ -866,7 +866,7 @@ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGE
 
 Display totals of documents bucketed by some interval range
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/ratings/_search?size=0&pretty" -d '
+curl -u user:password -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/ratings/_search?size=0&pretty" -d '
 {
     "aggs": {
         "whole_ratings": {
@@ -875,7 +875,7 @@ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGE
     }
 }'
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?size=0&pretty" -d '
+curl -u user:password -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?size=0&pretty" -d '
 {
     "aggs": {
         "release": {
@@ -886,7 +886,7 @@ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGE
 
 ## Times Series
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/kafka-logs/_search?size=0&pretty" -d '
+curl -u user:password -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/kafka-logs/_search?size=0&pretty" -d '
 {
     "aggs": {
         "timestamp": {
@@ -895,7 +895,7 @@ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGE
     }
 }'
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/kafka-logs/_search?size=0&pretty" -d '
+curl -u user:password -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/kafka-logs/_search?size=0&pretty" -d '
 {
     "query": {
         "match": {
@@ -914,7 +914,7 @@ When did my site go down on May 5, 2017?
 (bucket 500 status codes by the minute in kafka-logs)
 
 --start with hours
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/kafka-logs/_search?size=0&pretty" -d '
+curl -u user:password -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/kafka-logs/_search?size=0&pretty" -d '
 {
     "query": {
         "match": {
@@ -931,7 +931,7 @@ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGE
     }
 }'
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/kafka-logs/_search?size=0&pretty" -d '
+curl -u user:password -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/kafka-logs/_search?size=0&pretty" -d '
 {
     "query": {
         "match": {
@@ -951,7 +951,7 @@ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGE
 ## Nested aggregations (example with text field)
 
 -- Checking the title field will give us 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET "
+curl -u user:password -H "Content-Type:application/json" -XGET "
 https://guide-to-es.es.us-central1.gcp.cloud.es.io/ratings/_mappings?pretty"
  
 --this will make the query fails if we don't change it
@@ -966,7 +966,7 @@ https://guide-to-es.es.us-central1.gcp.cloud.es.io/ratings/_mappings?pretty"
 }
 
 -- let's change the field properties
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPUT "https://guide-to-es.es.us-central1.gcp.cloud.es.io/ratings/_mappings?pretty" -d '
+curl -u user:password -H "Content-Type:application/json" -XPUT "https://guide-to-es.es.us-central1.gcp.cloud.es.io/ratings/_mappings?pretty" -d '
 {
     "properties": {
         "title": {
@@ -977,7 +977,7 @@ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPU
 
 }'
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/ratings/_search?size=0&pretty" -d '
+curl -u user:password -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/ratings/_search?size=0&pretty" -d '
 {
     "query": {
         "match_phrase": {
@@ -1000,9 +1000,9 @@ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGE
 
 Even with the above edits we don't get the expect result, we have to reindex the ratings index with the appropriate mappings
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XDELETE "https://guide-to-es.es.us-central1.gcp.cloud.es.io/ratings/"
+curl -u user:password -H "Content-Type:application/json" -XDELETE "https://guide-to-es.es.us-central1.gcp.cloud.es.io/ratings/"
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPUT "https://guide-to-es.es.us-central1.gcp.cloud.es.io/ratings/" -d '
+curl -u user:password -H "Content-Type:application/json" -XPUT "https://guide-to-es.es.us-central1.gcp.cloud.es.io/ratings/" -d '
 {
     "mappings": {
         "properties": {
@@ -1021,7 +1021,7 @@ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPU
 
 python IndexRating.py #(comment the delete part in the script)
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/ratings/_search?size=0&pretty" -d '
+curl -u user:password -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/ratings/_search?size=0&pretty" -d '
 {
     "query": {
         "match_phrase": {
@@ -1044,17 +1044,17 @@ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGE
 
 ## Elasticsearch sql
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPOST "https://guide-to-es.es.us-central1.gcp.cloud.es.io/_sql?format=txt" -d '
+curl -u user:password -H "Content-Type:application/json" -XPOST "https://guide-to-es.es.us-central1.gcp.cloud.es.io/_sql?format=txt" -d '
 { "query": "DESCRIBE movies"}'
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPOST "https://guide-to-es.es.us-central1.gcp.cloud.es.io/_sql?format=txt" -d '
+curl -u user:password -H "Content-Type:application/json" -XPOST "https://guide-to-es.es.us-central1.gcp.cloud.es.io/_sql?format=txt" -d '
 { "query": "SELECT title from movies limit 10"}'
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPOST "https://guide-to-es.es.us-central1.gcp.cloud.es.io/_sql?format=txt" -d '
+curl -u user:password -H "Content-Type:application/json" -XPOST "https://guide-to-es.es.us-central1.gcp.cloud.es.io/_sql?format=txt" -d '
 { "query": "SELECT title, year from movies where year < 1920 order by year"}'
 
 --translate sql query to DSL (domain-specific language)
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPOST "https://guide-to-es.es.us-central1.gcp.cloud.es.io/_sql/translate?pretty" -d '
+curl -u user:password -H "Content-Type:application/json" -XPOST "https://guide-to-es.es.us-central1.gcp.cloud.es.io/_sql/translate?pretty" -d '
 { "query": "SELECT title, year from movies where year < 1920 order by year"}'
 
 Sql cli on a local installation
@@ -1233,11 +1233,11 @@ wget http://media.sundog-soft.com/es8/MoviesToJson.py
 
 python MoviesToJson.py >> moremovies.json
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --silent --request DELETE 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies'
+curl -u user:password -H "Content-Type:application/json" --silent --request DELETE 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies'
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request PUT 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/_bulk' --data-binary @moremovies.json
+curl -u user:password -H "Content-Type:application/json" --request PUT 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/_bulk' --data-binary @moremovies.json
 
-curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?q=mary%20poppins&pretty' 
+curl -u user:password -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?q=mary%20poppins&pretty' 
 
 ## Importing data with client library (available for much language)
 

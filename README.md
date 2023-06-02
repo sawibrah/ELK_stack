@@ -1,4 +1,4 @@
-# Elastic Stack README
+# Elastic Stack
 
 The Elastic Stack is a powerful set of open-source tools designed for processing and visualizing large volumes of data. It consists of the following main components:
 
@@ -71,7 +71,6 @@ To get started with the Elastic Stack, follow these steps:
 
 ## Resources
 
-All the codes are in the file `codes`
 
 - [Elasticsearch Documentation](https://www.elastic.co/guide/index.html)
 - [Kibana Documentation](https://www.elastic.co/guide/en/kibana/current/index.html)

@@ -32,8 +32,8 @@ filter {
 output {
   elasticsearch { 
     hosts => ["https://guide-to-es.es.us-central1.gcp.cloud.es.io:443"]
-    user => "elastic"
-    password => "fRMrgyuBtROlOrrtZ0UvgttV"
+    user => "user"
+    password => "password"
    }
    stdout {
     codec => rubydebug
@@ -63,8 +63,8 @@ input {
 output {
   elasticsearch { 
     hosts => ["https://guide-to-es.es.us-central1.gcp.cloud.es.io:443"]
-    user => "elastic"
-    password => "fRMrgyuBtROlOrrtZ0UvgttV"
+    user => "user"
+    password => "password"
     index => "movielens-sql"
    }
    stdout {
@@ -123,8 +123,8 @@ filter {
 output {
   elasticsearch { 
     hosts => ["https://guide-to-es.es.us-central1.gcp.cloud.es.io:443"]
-    user => "elastic"
-    password => "fRMrgyuBtROlOrrtZ0UvgttV"
+    user => "user"
+    password => "password"
     index => "demo-json"
    }
    stdout { }
@@ -155,8 +155,8 @@ filter {
 output {
   elasticsearch { 
     hosts => ["https://guide-to-es.es.us-central1.gcp.cloud.es.io:443"]
-    user => "elastic"
-    password => "fRMrgyuBtROlOrrtZ0UvgttV"
+    user => "user"
+    password => "password"
     index => "demo-json-drop"
    }
    stdout { }
@@ -190,8 +190,8 @@ filter {
 output {
   elasticsearch { 
     hosts => ["https://guide-to-es.es.us-central1.gcp.cloud.es.io:443"]
-    user => "elastic"
-    password => "fRMrgyuBtROlOrrtZ0UvgttV"
+    user => "user"
+    password => "password"
     index => "demo-json-split"
    }
    stdout { }
@@ -226,8 +226,8 @@ filter {
 output {
   elasticsearch { 
     hosts => ["https://guide-to-es.es.us-central1.gcp.cloud.es.io:443"]
-    user => "elastic"
-    password => "fRMrgyuBtROlOrrtZ0UvgttV"
+    user => "user"
+    password => "password"
     index => "demo-json-split-structure"
    }
    stdout { }
@@ -267,8 +267,8 @@ filter {
 output {
    elasticsearch {
      hosts => ["https://guide-to-es.es.us-central1.gcp.cloud.es.io:443"]
-     user => "elastic"
-     password => "fRMrgyuBtROlOrrtZ0UvgttV"
+     user => "user"
+     password => "password"
      index => "demo-grok"
   }
 
@@ -305,8 +305,8 @@ filter {
 output {
    elasticsearch {
      hosts => ["https://guide-to-es.es.us-central1.gcp.cloud.es.io:443"]
-     user => "elastic"
-     password => "fRMrgyuBtROlOrrtZ0UvgttV"
+     user => "user"
+     password => "password"
      index => "demo-grok-strange"
   }
 
@@ -343,8 +343,8 @@ filter {
 output {
    elasticsearch {
      hosts => ["https://guide-to-es.es.us-central1.gcp.cloud.es.io:443"]
-     user => "elastic"
-     password => "fRMrgyuBtROlOrrtZ0UvgttV"
+     user => "user"
+     password => "password"
      index => "demo-grok-multiple"
   }
 
@@ -405,8 +405,8 @@ filter {
 output{
   elasticsearch{
     hosts => ["https://guide-to-es.es.us-central1.gcp.cloud.es.io:443"]
-     user => "elastic"
-     password => "fRMrgyuBtROlOrrtZ0UvgttV" 
+     user => "user"
+     password => "password" 
     index => "nginx-access-logs-02" 
   }
   stdout { 
@@ -718,8 +718,8 @@ output {
   if [type] == "heartbeat" {
      elasticsearch {
      hosts => ["https://guide-to-es.es.us-central1.gcp.cloud.es.io:443"]
-     user => "elastic"
-     password => "fRMrgyuBtROlOrrtZ0UvgttV"
+     user => "user"
+     password => "password"
      index => "heartbeat"
  	 }
   }
@@ -749,8 +749,8 @@ input {
 output {
      elasticsearch {
      hosts => ["https://guide-to-es.es.us-central1.gcp.cloud.es.io:443"]
-     user => "elastic"
-     password => "fRMrgyuBtROlOrrtZ0UvgttV"
+     user => "user"
+     password => "password"
      index => "generator"
     } 
   stdout {
@@ -789,8 +789,8 @@ filter {
 output {
    elasticsearch {
      hosts => ["https://guide-to-es.es.us-central1.gcp.cloud.es.io:443"]
-     user => "elastic"
-     password => "fRMrgyuBtROlOrrtZ0UvgttV"
+     user => "user"
+     password => "password"
      index => "dlq-sample-data"
   }
 }
@@ -814,8 +814,8 @@ input {
 output {
    elasticsearch {
      hosts => ["https://guide-to-es.es.us-central1.gcp.cloud.es.io:443"]
-     user => "elastic"
-     password => "fRMrgyuBtROlOrrtZ0UvgttV"
+     user => "user"
+     password => "password"
      index => "dlq-01"
   }
 stdout {
@@ -878,8 +878,8 @@ filter {
 output{
   elasticsearch{
     hosts => ["https://guide-to-es.es.us-central1.gcp.cloud.es.io:443"]
-     user => "elastic"
-     password => "fRMrgyuBtROlOrrtZ0UvgttV"
+     user => "user"
+     password => "password"
     index => "syslog-received-on-tcp" 
   }
   stdout { 
@@ -919,8 +919,8 @@ filter {
 output{
   elasticsearch{
     hosts => ["https://guide-to-es.es.us-central1.gcp.cloud.es.io:443"]
-     user => "elastic"
-     password => "fRMrgyuBtROlOrrtZ0UvgttV"
+     user => "user"
+     password => "password"
     index => "syslog-monitor" 
   }
 }
@@ -962,8 +962,8 @@ val people=lines.map(mapper).toDF()
 
 // Set the Elasticsearch endpoint, username, and password
 val endpoint = "https://guide-to-es.es.us-central1.gcp.cloud.es.io"
-val username = "elastic"
-val password = "fRMrgyuBtROlOrrtZ0UvgttV"
+val username = "user"
+val password = "password"
 
 // Configure Elasticsearch properties
 val esConfig = Map(
@@ -980,8 +980,8 @@ people.saveToEs(index, esConfig)
 // Trying second approach
 // Set the Elasticsearch endpoint, username, and password
 val endpoint = "https://guide-to-es.es.us-central1.gcp.cloud.es.io"
-val username = "elastic"
-val password = "fRMrgyuBtROlOrrtZ0UvgttV"
+val username = "user"
+val password = "password"
 
 // Configure Elasticsearch properties
 val esConfig = Map(
