@@ -1,0 +1,1300 @@
+# Elasticsearc
+
+
+## Installation on your local machine
+
+wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo gpg --dearmor -o /usr/share/keyrings/elasticsearch-keyring.gpg
+
+sudo apt install apt-transport-https
+
+echo "deb [signed-by=/usr/share/keyrings/elasticsearch-keyring.gpg] https://artifacts.elastic.co/packages/8.x/apt stable main" | sudo tee /etc/apt/sources.list.d/elastic-8.x.list
+
+sudo apt update 
+sudo apt install elasticsearch
+
+### some config to do in /etc/elasticsearch/elasticsearch.yml
+
+--Uncomment node.name
+network.host: 0.0.0.0
+discovery.seed_hosts: ["127.0.0.1"]
+--desable xpack security
+xpack.security.enable: false
+cluster.initial_master_nodes: ["node-1"]
+
+--increase default time out to 900 (if not set so)
+--sudo vi /lib/systemd/system/elasticsearch.a
+sudo vi /usr/lib/systemd/system/elasticsearch.service
+TimeoutStartSec=600
+
+sudo chmod 755 /var/log/elasticsearch
+
+sudo systemctl daemon-reload
+ --sudo systemctl enable elasticsearch.service
+sudo systemctl start elasticsearch.service
+
+##### Not that installing it locally require a lot of RAM
+We had the use the cloud trial (14 days) for the hands-on
+
+### Get shakespeare data
+wget http://media.sundog-soft.com/es8/shakespeare_8.0.json
+
+wget http://media.sundog-soft.com/es8/shakes-mapping.json
+
+--Creating the index using a given mapping (schema)
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPUT https://guide-to-es.es.us-central1.gcp.cloud.es.io/shakespare --data-binary @shakes-mapping.json
+
+--Indexing (bulk indexing)
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPUT https://guide-to-es.es.us-central1.gcp.cloud.es.io/shakespare/_bulk --data-binary @shakespeare_8.0.json
+
+--Searching
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET https://guide-to-es.es.us-central1.gcp.cloud.es.io/shakespare/_search?pretty -d '
+{
+    "query":{
+        "match_phrase": {
+            "text_entry": "to be or not to be"
+        }
+    }
+}' 
+
+## Rest and Restful Api
+
+### HTTP request
+Method: The "verb" of the request. GET, POST, PUT, or DELETE
+Protocol: What flavor of HTTP (HTTP/1.1)
+Host: What web server you want to talk to
+Url: What resource is being requested
+Body: Extra data needed by the serve
+Headers: User-agent, content-type, etc.
+
+### Restful APi's
+GET requests retrieve information (like search resutls)
+PUT requests insert or replace new infromation
+DELETE requests delete information
+
+REST: representational state tranfer
+
+### Curl template
+
+curl -H "Content-Type: application/json" <URL> -d '<BODY>'
+
+### TF-IDF
+
+TF-IDF means Term Frequency * Inverse Document Frequency
+Term Frequency is how oftne a term appears in a given document
+Document Frequency is how often a term appears in all documents
+Term Frequency / Document Frequency measures the relevance of a term in a document
+
+### Get movie data
+
+wget http://media.sundog-soft.com/es/ml-latest-small.zip
+
+unzip ml-latest-small.zip
+
+#### let make our own curl command here
+
+mkdir bin
+cd bin
+vi curl
+
+#!/bin/curl
+/usr/bin/curl -H "Content-Type:application/json" "$@"
+
+chmod a+x curl
+
+## About analysers
+
+Character filters: Remove HTML encoding, convert & to and
+Tokenizer: Split strings on whitespace/punctuation/non-letters
+Token Filter: Lowercasing, stemming, synonyms, stopwords
+
+### Creating index movies with mappings
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPUT https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/ -d '
+{
+    "mappings": {
+        "properties": {
+            "year": {
+                "type": "date"
+            }
+        }
+    }
+}' 
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_mapping
+
+### insert movie
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPUT https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_doc/109407?pretty -d '
+{
+    "genre": ["IMAX", "Sci-Fi"],
+    "title": "Interstellar",
+    "year": 2014
+}'
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty
+
+
+## Bulk import using json format( note that the file contains the index name where to insert into)
+
+wget http://media.sundog-soft.com/es8/movies.json
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPUT https://guide-to-es.es.us-central1.gcp.cloud.es.io/_bulk?pretty --data-binary @movies.json
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty
+
+## Upading a document (not doc are immutable, just a work around)
+
+-- trying to index a new doc using an existing _id (will treat it as an update)
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPUT https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_doc/109407?pretty -d '
+{
+    "genre": ["IMAX", "Sci-Fi"],
+    "title": "Interstellar foo",
+    "year": 2014
+}'
+
+-- partial update (POST method)
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPOST https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_update/109407?pretty -d '
+{
+    "doc": {
+        "title": "Interstellar"
+    }
+}'
+
+## Deleting a doc
+-- let's first get the doc _id for the Dark nigth
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?q=Dark
+
+--deleting
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XDELETE https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_doc/58559?pretty
+
+### Exercice
+
+Insert, update, and then delete a movie fo your choice into the movies index
+
+--inserting the movie
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPUT https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_doc/1?pretty -d '
+{
+    "genre": ["Action", "Sci-Fi"],
+    "title": "Rome must die",
+    "year": 2005
+}'
+
+--checking if all went well
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_doc/1?pretty 
+
+--updating
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPOST https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_update/1?pretty -d '
+{
+    "doc": {
+        "year": 2008
+    }   
+}'
+
+--deleting
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XDELETE https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_doc/1?pretty
+
+## Optimistic Concurrency control
+the sequence number _seq_no and primary term _primary_term
+
+Use retry_on_conflicts=N to automatically rety()
+
+--let's get the _seq_no and _primary_term
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_doc/109487?pretty
+
+-- updating using concurrency control manually
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPUT "https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_doc/109487?if_seq_no=3&if_primary_term=1" -d '
+{
+    "title" : "Interstellar Foo",
+    "year" : 2014,
+    "genre" : ["Sci-Fi", "IMAX"]
+}'
+
+-- updating using concurrency control with retry_on_conflict
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPOST "https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_update/109487?retry_on_conflict=5" -d '
+{
+    "doc" : {
+        "title": "Interstellar Typo"
+    }
+}'
+
+## Control full text search
+-- Using analyzers
+keyword type for exact matches
+text type for partial matches
+
+--partial match examples
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty" -d '
+{
+    "query": {
+        "match": {
+            "title": "Star Trek"
+        }
+    }
+}'
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty" -d '
+{
+    "query": {
+        "match_phrase": {
+            "genre": "sci"
+        }
+    }
+}'
+
+-- delete the index movies and map it with new setting
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XDELETE "https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/"
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPUT "https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/" -d '
+{
+    "mappings": {
+        "properties": {
+            "id": {"type": "integer"},
+            "year": {"type": "date"},
+            "genre": {"type": "keyword"},
+            "title": {"type": "text", "analyzer": "english"}
+        }
+    }
+}'
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPUT "https://guide-to-es.es.us-central1.gcp.cloud.es.io/_bulk?pretty" --data-binary @movies.json
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty" -d '
+{
+    "query": {
+        "match_phrase": {
+            "genre": "sci"
+        }
+    }
+}'
+
+## Data modelling
+
+### Parent/child relationship
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPUT "https://guide-to-es.es.us-central1.gcp.cloud.es.io/series" -d '
+{
+    "mappings": {
+        "properties": {
+            "film_to_franchise": {
+                "type": "join",
+                "relations": {"franchise": "film"}
+            }
+        }
+    }
+}'
+
+wget http://media.sundog-soft.com/es8/series.json
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPUT "https://guide-to-es.es.us-central1.gcp.cloud.es.io/_bulk?pretty" --data-binary @series.json
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/series/_search?pretty" -d '
+{
+    "query": {
+        "has_parent": {
+            "parent_type": "franchise",
+            "query": {
+                "match": {
+                    "title": "Star Wars"
+                }
+            }
+        }
+    }
+}'
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/series/_search?pretty" -d '
+{
+    "query": {
+        "has_child": {
+            "type": "film",
+            "query": {
+                "match": {
+                    "title": "The Force Awakens"
+                }
+            }
+        }
+    }
+}'
+
+## Flattened datatype (avoid mapping explosion, nested mappings)
+Note that the field will be keyword (no analyzer), limitting the searching capabilities
+
+
+1.
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPUT "https://guide-to-es.es.us-central1.gcp.cloud.es.io/demo-default/_doc/1" -d'{
+  "message": "[5592:1:0309/123054.737712:ERROR:child_process_sandbox_support_impl_linux.cc(79)] FontService unique font name matching request did not receive a response.",
+  "fileset": {
+    "name": "syslog"
+  },
+  "process": {
+    "name": "org.gnome.Shell.desktop",
+    "pid": 3383
+  },
+  "@timestamp": "2020-03-09T18:00:54.000+05:30",
+  "host": {
+    "hostname": "bionic",
+    "name": "bionic"
+  }
+}'
+
+
+2.
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/demo-default/_mapping?pretty=true"
+
+3.
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/_cluster/state?pretty=true" >> es-cluster-state.json
+
+4.
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPUT "https://guide-to-es.es.us-central1.gcp.cloud.es.io/demo-flattened"
+
+5.
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPUT "https://guide-to-es.es.us-central1.gcp.cloud.es.io/demo-flattened/_mapping" -d'{
+  "properties": {
+    "host": {
+      "type": "flattened"
+    }
+  }
+}'
+
+6.
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPUT "https://guide-to-es.es.us-central1.gcp.cloud.es.io/demo-flattened/_doc/1" -d'{
+  "message": "[5592:1:0309/123054.737712:ERROR:child_process_sandbox_support_impl_linux.cc(79)] FontService unique font name matching request did not receive a response.",
+  "fileset": {
+    "name": "syslog"
+  },
+  "process": {
+    "name": "org.gnome.Shell.desktop",
+    "pid": 3383
+  },
+  "@timestamp": "2020-03-09T18:00:54.000+05:30",
+  "host": {
+    "hostname": "bionic",
+    "name": "bionic"
+  }
+}'
+
+7.
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/demo-flattened/_mapping?pretty=true"
+
+8.
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPOST "https://guide-to-es.es.us-central1.gcp.cloud.es.io/demo-flattened/_update/1" -d'{
+    "doc" : {
+        "host" : {
+          "osVersion": "Bionic Beaver",
+          "osArchitecture":"x86_64"
+        }
+    }
+}'
+
+9.
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/demo-flattened/_search?pretty=true" -d'{
+  "query": {
+    "term": {
+      "host": "Bionic Beaver"
+    }
+  }
+}'
+
+10.
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/demo-flattened/_search?pretty=true" -d'{
+  "query": {
+    "term": {
+      "host.osVersion": "Bionic Beaver"
+    }
+  }
+}'
+
+11.
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/demo-flattened/_search?pretty=true" -d'{
+  "query": {
+    "term": {
+      "host.osVersion": "Beaver"
+    }
+  }
+}'
+
+## Mapping challenges
+Explicit mapping: execptions when there is a mismatch
+Dynamic mapping: may lead to mapping explosion
+
+1.
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request PUT 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/microservice-logs' \
+--data-raw '{
+   "mappings": {
+       "properties": {
+           "timestamp": { "type": "date"  },
+           "service": { "type": "keyword" },
+           "host_ip": { "type": "ip" },
+           "port": { "type": "integer" },
+           "message": { "type": "text" }
+       }
+   }
+}'
+
+2.
+
+{"timestamp": "2020-04-11T12:34:56.789Z", "service": "ABC", "host_ip": "10.0.2.15", "port": 12345, "message": "Started!" }
+
+3.
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request POST 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/microservice-logs/_doc?pretty' \
+--data-raw '{"timestamp": "2020-04-11T12:34:56.789Z", "service": "XYZ", "host_ip": "10.0.2.15", "port": "15000", "message": "Hello!" }'
+
+4.
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request POST 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/microservice-logs/_doc?pretty' \
+--data-raw '{"timestamp": "2020-04-11T12:34:56.789Z", "service": "XYZ", "host_ip": "10.0.2.15", "port": "NONE", "message": "I am not well!" }'
+
+5.
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request POST 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/microservice-logs/_close'
+ 
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --location --request PUT 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/microservice-logs/_settings' \
+--data-raw '{
+   "index.mapping.ignore_malformed": true
+}'
+ 
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request POST 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/microservice-logs/_open'
+
+6.
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request POST 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/microservice-logs/_doc?pretty' \
+--data-raw '{"timestamp": "2020-04-11T12:34:56.789Z", "service": "XYZ", "host_ip": "10.0.2.15", "port": "NONE", "message": "I am not well!" }'
+
+7. Limitation of ignore malformed with json type
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request POST 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/microservice-logs/_doc?pretty' \
+--data-raw '{"timestamp": "2020-04-11T12:34:56.789Z", "service": "ABC", "host_ip": "10.0.2.15", "port": 12345, "message": {"data": {"received":"here"}}}'
+
+8. This will pass
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request POST 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/microservice-logs/_doc?pretty' \
+--data-raw '{"timestamp": "2020-04-11T12:34:56.789Z", "service": "ABC", "host_ip": "10.0.2.15", "port": 12345, "message": "Received...", "payload": {"data": {"received":"here"}}}'
+
+9. But this will fail (be aware)
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request POST 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/microservice-logs/_doc?pretty' \
+--data-raw '{"timestamp": "2020-04-11T12:34:56.789Z", "service": "ABC", "host_ip": "10.0.2.15", "port": 12345, "message": "Received...", "payload": {"data": {"received": {"even": "more"}}}}'
+
+10.
+thousandone_fields_json=$(echo {1..1001..1} | jq -Rn '( input | split(" ") ) as $nums | $nums[] | . as $key | [{key:($key|tostring),value:($key|tonumber)}] | from_entries' | jq -cs 'add')
+ 
+echo "$thousandone_fields_json"
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --location --request PUT 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/big-objects'
+
+-- Error limit exceeded
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request POST 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/big-objects/_doc?pretty' --data-raw "$thousandone_fields_json"
+
+-- a solution (but not advised)
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --location --request PUT 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/big-objects/_settings' --data-raw '{
+    "index.mapping.total.fields.limit": 1001
+}'
+
+## Query Lite (URI search)
+/movies/_search?q=title:star
+
+/movies/_search?q=+year:>2010+title:trek
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?q=title:star&pretty'
+
+-- works but may give issue on a web browser (the characters should be encoded)
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?q=+year:>2010+title:trek&pretty'
+
+## Request body search
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty' -d '
+{
+    "query": {
+        "match": {
+            "title": "star"
+        }
+    }
+}'
+
+## Filters
+ask a yes/no question of your data
+Use filters when you can - they are faster and cacheable.
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty' -d '
+{
+    "query": {
+        "bool": {
+            "must": {"term": {"title": "trek"}},
+            "filter": {"range" : {"year": {"gte": 2010}}}
+        }
+    }
+}'
+
+Other filter, terms, term, range, exists, missing, bool
+
+Other query, match_all (default), match, multi_match, bool
+
+Both query and filter can be combined
+
+### Phrase matching
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty' -d '
+{
+    "query": {
+        "match_phrase": {
+            "title": "star wars"
+        }
+    }
+}'
+
+### Slop
+Order matters but you're Ok with some words being in between the terms
+The slop represents how far you're willing to let a term move to satisfy a phrase (in either direction)
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty' -d '
+{
+    "query": {
+        "match_phrase": {
+            "title": {"query": "star beyond", "slop": 1}
+        }
+    }
+}'
+
+Another example: "quick brown fox" would macth "quick fox" with slop of 1
+
+### Proximy query
+Phrase where the words are closer will have higher score
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty' -d '
+{
+    "query": {
+        "match_phrase": {
+            "title": {"query": "star beyond", "slop": 100}
+        }
+    }
+}'
+
+### Exercice
+Search for "Star Wars" movies released after 1980, using both a URI search and a request body search
+
+-- won't work as execpted
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?q=+year:>1980+title:star%20wars&pretty'
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?q=%2Byear%3A%3E1980+%2Btitle%3Astar%20wars&pretty'
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty' -d '
+{
+    "query": {
+        "bool": {
+            "must": {"match_phrase": {"title": "star wars"}},
+            "filter": {"range" : {"year": {"gte": 1980}}}
+        }
+    }
+}'
+
+### Pagination
+Specify "From" and "Size"
+from=0,size=3
+from=3,size=3
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?size=2&from=2&pretty'
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty' -d '
+{
+    "from": 2,
+    "size": 2,
+    "query": {"match" : {"genre": "Sci-Fi"}}
+}'
+
+### Sorting
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?sort=year&pretty'
+
+-- This gives an error
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?sort=title&pretty'
+
+--Work around, re-index the data with specific mapping to handle the issue
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request DELETE 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies'
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPUT https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/ -d '
+{
+    "mappings": {
+        "properties": {
+            "title": {
+                    "type": "text",
+                    "fields": {
+                        "raw": {
+                            "type": "keyword"
+                        }
+                    }
+            }
+        }
+    }
+}' 
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPUT https://guide-to-es.es.us-central1.gcp.cloud.es.io/_bulk?pretty --data-binary @movies.json
+
+-- sort it now using title.raw field
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?sort=title.raw&pretty'
+
+### More on Filters
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty' -d '
+{
+    "query": {
+        "bool": {
+            "must": {"match": {"genre": "Sci-Fi"}},
+            "must_not": {"match": {"title": "trek"}},
+            "filter": {"range" : {"year": {"gte": 2010, "lt":2015}}}
+        }
+    }
+}'
+
+### Exercice
+Search for science fiction movies before 1960, sorted by title
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?sort=title.raw&pretty' -d '
+{
+    "query": {
+        "bool": {
+            "must": {"match": {"genre": "Sci-Fi"}},
+            "filter": {"range" : {"year": {"lt":1960}}}
+        }
+    }
+}'
+
+## Fuzziness
+A way to account for types and misspellings
+The "levenshtein edit distance" accounts for:
+    substitutions of characters (interstellar -- intersteller)
+    insertions of characters (interstellar -- insterstellar)
+    deletions of characters (interstellar -- interstelar)
+All of the above have an edit distance of 1
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty' -d '
+{
+    "query": {
+        "fuzzy": {
+            "title": {"value": "intrsteller", "fuzziness": 2}
+        }
+    }
+}'
+
+### Auto fuzziness
+0 for 1-2 character strings
+1 for 3-5 character strings
+2 for anything else
+
+## Partial matching
+### Prefix queries on "strings"
+
+-- the year field shoulb a string (text, keyword)
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty' -d '
+{
+    "query": {
+        "prefix": {
+            "year": "201"
+        }
+    }
+}'
+
+### Wildcard queries
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty' -d '
+{
+    "query": {
+        "wildcard": {
+            "year": "1*"
+        }
+    }
+}'
+
+### Regex queries
+
+### Searh as you type
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?pretty' -d '
+{
+    "query": {
+        "match_phrase_prefix": {
+            "title": {
+                "query": "star",
+                "slop": 10
+            }
+        }
+    }
+}'
+
+## N-grams
+star:
+unigram [s, t, a, r]
+bigram [st, ta, ar]
+trigram [star, tar]
+4-gram [star]
+
+create an analyzer
+
+### Search as you type 
+1.
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --silent --request POST 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_analyze?pretty' \
+--data-raw '{
+   "tokenizer" : "standard",
+   "filter": [{"type":"edge_ngram", "min_gram": 1, "max_gram": 4}],
+   "text" : "Star"
+}'
+
+
+2.
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request PUT 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/autocomplete' \
+-d '{
+   "mappings": {
+       "properties": {
+           "title": {
+               "type": "search_as_you_type"
+           },
+           "genre": {
+               "type": "search_as_you_type"
+           }
+       }
+   }
+}'
+
+3.
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --silent --request POST 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/_reindex?pretty' --data-raw '{
+ "source": {
+   "index": "movies"
+ },
+ "dest": {
+   "index": "autocomplete"
+ }
+}' | grep "total\|created\|failures"
+
+4.
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -s --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/autocomplete/_search?pretty' --data-raw '{
+   "size": 5,
+   "query": {
+       "multi_match": {
+           "query": "Sta",
+           "type": "bool_prefix",
+           "fields": [
+               "title",
+               "title._2gram",
+               "title._3gram"
+           ]
+       }
+   }
+}'
+
+
+5.
+INPUT=''
+while true
+do
+ IFS= read -rsn1 char
+ INPUT=$INPUT$char
+ echo $INPUT
+ curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --silent --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/autocomplete/_search' \
+ --data-raw '{
+     "size": 5,
+     "query": {
+         "multi_match": {
+             "query": "'"$INPUT"'",
+             "type": "bool_prefix",
+             "fields": [
+                 "title",
+                 "title._2gram",
+                 "title._3gram"
+             ]
+         }
+     }
+ }' | jq .hits.hits[]._source.title | grep -i "$INPUT"
+done
+
+## Aggregations (Structure data)
+
+Elasticsearch aggregations can sometimes take te place of hadoop/spark/etc and return results instantly!
+
+You can even nest aggregations together
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET https://guide-to-es.es.us-central1.gcp.cloud.es.io/ratings/_search?pretty -d '
+{
+    "aggs": {
+        "ratings": {
+            "terms": {"field": "rating"}
+        }
+    }
+}'
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET https://guide-to-es.es.us-central1.gcp.cloud.es.io/ratings/_search?pretty -d '
+{
+    "query": {
+        "match": {
+            "rating": 5.0
+        }
+    },
+    "aggs": {
+        "ratings": {
+            "terms": {"field": "rating"}
+        }
+    }
+}'
+
+--adding size=0 give only the aggretion result without the matching docs
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/ratings/_search?size=0&pretty" -d '
+{
+    "query": {
+        "match_phrase": {
+            "title": "Star Wars Episode IV"
+        }
+    },
+    "aggs": {
+        "avg_rating": {
+            "avg": {"field": "rating"}
+        }
+    }
+}'
+
+## Histogram
+
+Display totals of documents bucketed by some interval range
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/ratings/_search?size=0&pretty" -d '
+{
+    "aggs": {
+        "whole_ratings": {
+            "histogram": {"field": "rating", "interval":1.0}
+        }
+    }
+}'
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?size=0&pretty" -d '
+{
+    "aggs": {
+        "release": {
+            "histogram": {"field": "year", "interval":10}
+        }
+    }
+}'
+
+## Times Series
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/kafka-logs/_search?size=0&pretty" -d '
+{
+    "aggs": {
+        "timestamp": {
+            "date_histogram": {"field": "@timestamp", "interval":"hour"}
+        }
+    }
+}'
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/kafka-logs/_search?size=0&pretty" -d '
+{
+    "query": {
+        "match": {
+            "user_agent.original": "Googlebot"
+        }
+    },
+    "aggs": {
+        "timestamp": {
+            "date_histogram": {"field": "@timestamp", "calendar_interval":"hour"}
+        }
+    }
+}'
+
+### Exercice
+When did my site go down on May 5, 2017?
+(bucket 500 status codes by the minute in kafka-logs)
+
+--start with hours
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/kafka-logs/_search?size=0&pretty" -d '
+{
+    "query": {
+        "match": {
+            "http.response.status_code": "500"
+        }
+    },
+    "aggs": {
+        "timestamp": {
+            "date_histogram": {
+                "field": "@timestamp", 
+                "interval":"hour"
+            }
+        }
+    }
+}'
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/kafka-logs/_search?size=0&pretty" -d '
+{
+    "query": {
+        "match": {
+            "http.response.status_code": "500"
+        }
+    },
+    "aggs": {
+        "timestamp": {
+            "date_histogram": {
+                "field": "@timestamp", 
+                "interval":"minute"
+            }
+        }
+    }
+}'
+
+## Nested aggregations (example with text field)
+
+-- Checking the title field will give us 
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET "
+https://guide-to-es.es.us-central1.gcp.cloud.es.io/ratings/_mappings?pretty"
+ 
+--this will make the query fails if we don't change it
+"title" : {
+    "type" : "text",
+    "fields" : {
+    "keyword" : {
+        "type" : "keyword",
+        "ignore_above" : 256
+    }
+    }
+}
+
+-- let's change the field properties
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPUT "https://guide-to-es.es.us-central1.gcp.cloud.es.io/ratings/_mappings?pretty" -d '
+{
+    "properties": {
+        "title": {
+            "type": "text",
+            "fielddata": true
+        }
+    }
+
+}'
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/ratings/_search?size=0&pretty" -d '
+{
+    "query": {
+        "match_phrase": {
+            "title": "Star Wars"
+        }
+    },
+    "aggs": {
+        "titles": {
+            "terms": {"field": "title"},
+            "aggs": {
+            "avg_rating": {
+                "avg": {
+                    "field": "rating"
+                }
+            }
+        }
+        }
+    }
+}'
+
+Even with the above edits we don't get the expect result, we have to reindex the ratings index with the appropriate mappings
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XDELETE "https://guide-to-es.es.us-central1.gcp.cloud.es.io/ratings/"
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPUT "https://guide-to-es.es.us-central1.gcp.cloud.es.io/ratings/" -d '
+{
+    "mappings": {
+        "properties": {
+            "title": {
+                "type": "text",
+                "fielddata": true,
+                "fields": {
+                    "raw": {
+                        "type": "keyword"
+                    }
+                }
+            }
+        }
+    }
+}'
+
+python IndexRating.py #(comment the delete part in the script)
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/ratings/_search?size=0&pretty" -d '
+{
+    "query": {
+        "match_phrase": {
+            "title": "Star Wars"
+        }
+    },
+    "aggs": {
+        "titles": {
+            "terms": {"field": "title.raw"},
+            "aggs": {
+            "avg_rating": {
+                "avg": {
+                    "field": "rating"
+                }
+            }
+        }
+        }
+    }
+}'
+
+## Elasticsearch sql
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPOST "https://guide-to-es.es.us-central1.gcp.cloud.es.io/_sql?format=txt" -d '
+{ "query": "DESCRIBE movies"}'
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPOST "https://guide-to-es.es.us-central1.gcp.cloud.es.io/_sql?format=txt" -d '
+{ "query": "SELECT title from movies limit 10"}'
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPOST "https://guide-to-es.es.us-central1.gcp.cloud.es.io/_sql?format=txt" -d '
+{ "query": "SELECT title, year from movies where year < 1920 order by year"}'
+
+--translate sql query to DSL (domain-specific language)
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPOST "https://guide-to-es.es.us-central1.gcp.cloud.es.io/_sql/translate?pretty" -d '
+{ "query": "SELECT title, year from movies where year < 1920 order by year"}'
+
+Sql cli on a local installation
+
+sudo ./bin/elasticsearch-sql-cli
+
+## Transforms
+
+http://media.sundog-soft.com/es/transforms-8.txt
+
+mkdir transforms
+cd transforms
+
+wget https://raw.githubusercontent.com/elastic/examples/master/Common%20Data%20Formats/nginx_json_logs/nginx_json_logs
+
+cat nginx_json_logs | wc -l
+
+head -n 1 nginx_json_logs
+
+-- new setting for _id
+curl -XPUT "localhost:9200/_cluster/settings?pretty" -d'
+{
+  "persistent" : {
+    "indices.id_field_data.enabled" : true
+  }
+}'
+
+
+curl --request PUT "http://localhost:9200/nginx" \
+-d '{
+   "settings": {
+       "number_of_shards": 1,
+       "number_of_replicas": 0
+   },
+   "mappings": {
+       "properties": {
+           "time": {"type":"date","format":"dd/MMM/yyyy:HH:mm:ss Z"},
+           "remote_ip": {"type":"ip"},
+           "remote_user": {"type":"keyword"},
+           "request": {"type":"keyword"},
+           "response": {"type":"keyword"},
+           "bytes": {"type":"long"},
+           "referrer": {"type":"keyword"},
+           "agent": {"type":"keyword"}
+       }
+   }
+}'
+
+
+awk '{print "{\"index\":{}}\n" $0}' nginx_json_logs > nginx_json_logs_bulk
+
+
+head -n 2 nginx_json_logs_bulk
+
+
+curl --location --request POST 'http://localhost:9200/nginx/_bulk' \
+--data-binary '@nginx_json_logs_bulk'
+
+
+curl localhost:9200/nginx/_count
+
+curl --location --request POST 'http://localhost:9200/_transform/_preview' \
+--data-raw '{
+   "source": {
+       "index": "nginx"
+   },
+   "pivot": {
+       "group_by": {
+           "ip": {
+               "terms": {
+                   "field": "remote_ip"
+               }
+           }
+       },
+       "aggregations": {
+           "bytes.avg": {
+               "avg": {
+                   "field": "bytes"
+               }
+           },
+           "bytes.sum": {
+               "sum": {
+                   "field": "bytes"
+               }
+           },
+           "requests.total": {
+               "value_count": {
+                   "field": "_id"
+               }
+           },
+           "requests.last": {
+               "scripted_metric": {
+                   "init_script": "state.timestamp = 0L; state.date = '\'''\''",
+                   "map_script": "def doc_date = doc['\''time'\''].getValue().toInstant().toEpochMilli();if (doc_date > state.timestamp){state.timestamp = doc_date;state.date = doc['\''time'\''].getValue();}",
+                   "combine_script": "return state",
+                   "reduce_script": "def date = '\'''\'';def timestamp = 0L;for (s in states) {if (s.timestamp > (timestamp)){timestamp = s.timestamp; date = s.date;}} return date"
+               }
+           },
+           "requests.first": {
+               "scripted_metric": {
+                   "init_script": "state.timestamp = 1609455599000L; state.date = '\'''\''",
+                   "map_script": "def doc_date = doc['\''time'\''].getValue().toInstant().toEpochMilli();if (doc_date < state.timestamp){state.timestamp = doc_date;state.date = doc['\''time'\''].getValue();}",
+                   "combine_script": "return state",
+                   "reduce_script": "def date = '\'''\'';def timestamp = 0L;for (s in states) {if (s.timestamp < (timestamp)){timestamp = s.timestamp; date = s.date;}} return date"
+               }
+           }
+       }
+   }
+}'
+
+
+curl --location --request PUT 'http://localhost:9200/_transform/nginx_transform' \
+--data-raw '{
+	"source": {
+       "index": "nginx"
+   },
+   "pivot": {
+       "group_by": {
+           "ip": {
+               "terms": {
+                   "field": "remote_ip"
+               }
+           }
+       },
+       "aggregations": {
+           "bytes.avg": {
+               "avg": {
+                   "field": "bytes"
+               }
+           },
+           "bytes.sum": {
+               "sum": {
+                   "field": "bytes"
+               }
+           },
+           "requests.total": {
+               "value_count": {
+                   "field": "_id"
+               }
+           },
+           "requests.last": {
+               "scripted_metric": {
+                   "init_script": "state.timestamp = 0L; state.date = '\'''\''",
+                   "map_script": "def doc_date = doc['\''time'\''].getValue().toInstant().toEpochMilli();if (doc_date > state.timestamp){state.timestamp = doc_date;state.date = doc['\''time'\''].getValue();}",
+                   "combine_script": "return state",
+                   "reduce_script": "def date = '\'''\'';def timestamp = 0L;for (s in states) {if (s.timestamp > (timestamp)){timestamp = s.timestamp; date = s.date;}} return date"
+               }
+           },
+           "requests.first": {
+               "scripted_metric": {
+                   "init_script": "state.timestamp = 1609455599000L; state.date = '\'''\''",
+                   "map_script": "def doc_date = doc['\''time'\''].getValue().toInstant().toEpochMilli();if (doc_date < state.timestamp){state.timestamp = doc_date;state.date = doc['\''time'\''].getValue();}",
+                   "combine_script": "return state",
+                   "reduce_script": "def date = '\'''\'';def timestamp = 0L;for (s in states) {if (s.timestamp < (timestamp)){timestamp = s.timestamp; date = s.date;}} return date"
+               }
+           }
+       }
+   },
+   "description": "Transferend bytes and request dates overview for remote_ip",
+   "dest": {
+       "index": "nginx_transformed"
+   }
+}'
+
+curl --request POST 'http://localhost:9200/_transform/nginx_transform/_start'
+
+
+
+------------------------------------
+
+# Importing Data into your index
+
+## Importing Data with script
+
+wget http://media.sundog-soft.com/es8/MoviesToJson.py
+
+python MoviesToJson.py >> moremovies.json
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --silent --request DELETE 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies'
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request PUT 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/_bulk' --data-binary @moremovies.json
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" --request GET 'https://guide-to-es.es.us-central1.gcp.cloud.es.io/movies/_search?q=mary%20poppins&pretty' 
+
+## Importing data with client library (available for much language)
+
+pip3 install elasticsearch
+wget http://media.sundog-soft.com/es8/IndexRatings.py
+
+python IndexRatings.py
+
+## Exercise 
+Write a script to importthe tags.csv data from ml-latest-small into a new "tags" index.
+
+
+echo """
+import csv
+from collections import deque
+import elasticsearch
+from elasticsearch import helpers
+
+def readMovies():
+    csvfile = open('ml-latest-small/movies.csv', 'r', encoding='utf8')
+
+    reader = csv.DictReader( csvfile )
+
+    titleLookup = {}
+
+    for movie in reader:
+            titleLookup[movie['movieId']] = movie['title']
+
+    return titleLookup
+
+def readTags():
+    csvfile = open('ml-latest-small/tags.csv', 'r', encoding='utf8')
+
+    titleLookup = readMovies()
+
+    reader = csv.DictReader( csvfile )
+    for line in reader:
+        tag = {}
+        tag['user_id'] = int(line['userId'])
+        tag['movie_id'] = int(line['movieId'])
+        tag['title'] = titleLookup[line['movieId']]
+        tag['tag'] = line['tag']
+        tag['timestamp'] = int(line['timestamp'])
+        yield tag
+
+
+es = elasticsearch.Elasticsearch(hosts=['https://guide-to-es.es.us-central1.gcp.cloud.es.io:443'],
+    http_auth=('elastic', 'fRMrgyuBtROlOrrtZ0UvgttV'),
+    verify_certs=True)
+
+es.indices.delete(index='tags',ignore=404)
+deque(helpers.parallel_bulk(es,readTags(),index='tags', request_timeout=300), maxlen=0)
+es.indices.refresh()
+""" >> IndexTags.py
+
+python IndexTags.py
+
+mv IndexTags.py IndexTagsIbrah.py
+--solutions scripts
+wget http://media.sundog-soft.com/es8/IndexTags.py

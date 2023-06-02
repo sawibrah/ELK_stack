@@ -1,0 +1,998 @@
+## Logstash (between the source and destination Es, cloud, Mongodb,...) ingestion tools
+
+--get logs data
+wget http://media.sundog-soft.com/es/access_log
+
+--Set up Logstash integration for my ES cluster on the cloud
+--commands below should be run on localhost (my pc)
+curl -L -O https://artifacts.elastic.co/downloads/beats/elastic-agent/elastic-agent-8.7.1-linux-x86_64.tar.gz
+tar xzvf elastic-agent-8.7.1-linux-x86_64.tar.gz
+cd elastic-agent-8.7.1-linux-x86_64
+sudo ./elastic-agent install --url=https://9bec174a21cd4a6db648526d20adce3a.fleet.us-central1.gcp.cloud.es.io:443 --enrollment-token=QWszWlo0Z0JhRzZ2SkFBSU4zRV86SE83YmdvS2RTVW0wb2w0a3VxaTRNQQ==
+
+-- Local installation
+
+sudo apt install logstash
+vi /etc/logstash/conf.d/logstash.conf
+input {
+    file {
+        path => "/home/sawibrah/BigDataStuff/TopTech/ELK/2_Hands-on-course/access_log"
+        start_position => "beginning"
+    }
+}
+filter {
+    grok {
+        match => { "message" => "%{COMBINEDAPACHELOG}"}
+    }
+    date {
+        match => [ "timestamp", "dd/MMM/yyyy:HH:mm:ss Z"]
+    }
+}
+
+output {
+  elasticsearch { 
+    hosts => ["https://guide-to-es.es.us-central1.gcp.cloud.es.io:443"]
+    user => "elastic"
+    password => "fRMrgyuBtROlOrrtZ0UvgttV"
+   }
+   stdout {
+    codec => rubydebug
+   }
+}
+
+sudo /usr/share/logstash/bin/logstash -f /etc/logstash/conf.d/logstash.conf
+Ctrl+C when ingestion is done
+
+.ds-logs-elastic_agent.metricbeat-default-2023.05.29-000001
+
+## Logstash with MySql
+
+--need mysql connector mysql-connector-java-8
+
+vi /etc/logstash/conf.d/mysql.conf
+input {
+    jdbc {
+        jdbc_connection_string => "jdbc:mysql://localhost:3306/movielens"
+        jdbc_user => "sawibrah"
+        jdbc_password => "sawibrahpassword"
+        jdbc_driver_library => "path/to/connector"
+        jdbc_driver_class => "com.mysql.jdbc.Driver"
+        statement => "SELECT * FROM movies"
+    }
+}
+output {
+  elasticsearch { 
+    hosts => ["https://guide-to-es.es.us-central1.gcp.cloud.es.io:443"]
+    user => "elastic"
+    password => "fRMrgyuBtROlOrrtZ0UvgttV"
+    index => "movielens-sql"
+   }
+   stdout {
+    codec => json_lines
+   }
+}
+
+wget http://files.grouplens.org/datasets/movielens/ml-100k.zip
+unzip ml-100k.zip
+
+sudo mysql --local-infile=1 -u root -p
+create database movielens;
+create table movielens.movies(
+    movieID int primary key not null,
+    tittle text,
+    releaseDate date
+);
+set global local_infile=true;
+load data local infile 'ml-100k/u.item' into table movielens.movies character set latin1 fields terminated by '|' (movieID, title, @var3) set releaseDate = str_to_date(@var3, '%d-%M-%Y');
+
+## Import & parse csv
+
+mkdir -p csv-data; cd csv-data
+curl -O https://raw.githubusercontent.com/coralogix-resources/elk-course-samples/master/csv-schema-short-numerical.csv; cd ..;
+
+sudo wget -P /etc/logstash/conf.d https://raw.githubusercontent.com/coralogix-resources/elk-course-samples/master/csv-read.conf
+
+-- open the file to adjust the output section
+sudo vi /etc/logstash/conf.d/csv-read.conf
+
+sudo /usr/share/logstash/bin/logstash -f /etc/logstash/conf.d/csv-read.conf
+
+--with more filtering
+sudo wget -P /etc/logstash/conf.d https://raw.githubusercontent.com/coralogix-resources/elk-course-samples/master/csv-read-drop.conf
+
+sudo /usr/share/logstash/bin/logstash -f /etc/logstash/conf.d/csv-read-drop.conf
+
+## Import & parse json
+
+mkdir json-data; cd json-data
+wget http://media.sundog-soft.com/es/sample-json.log; cd ..
+
+sudo vi /etc/logstash/conf.d/json-read.conf
+input {
+    file {
+        start_position => "beginning"
+        path => "/home/sawibrah/BigDataStuff/TopTech/ELK/2_Hands-on-course/json-data/sample-json.log"
+        sincedb_path => "/dev/null"
+    }
+}
+filter {
+    json {
+        source => "message"
+    }
+}
+output {
+  elasticsearch { 
+    hosts => ["https://guide-to-es.es.us-central1.gcp.cloud.es.io:443"]
+    user => "elastic"
+    password => "fRMrgyuBtROlOrrtZ0UvgttV"
+    index => "demo-json"
+   }
+   stdout { }
+}
+
+sudo /usr/share/logstash/bin/logstash -f /etc/logstash/conf.d/json-read.conf
+
+--adjusting the filter section for more filtering
+sudo vi /etc/logstash/conf.d/json-read-drop.conf
+input {
+    file {
+        start_position => "beginning"
+        path => "/home/sawibrah/BigDataStuff/TopTech/ELK/2_Hands-on-course/json-data/sample-json.log"
+        sincedb_path => "/dev/null"
+    }
+}
+filter {
+    json {
+        source => "message"
+    }
+    if [paymentType] == "Mastercard" {
+        drop {}
+    }
+    mutate {
+        remove_field => ["message", "@timestamp", "path", "host", "@version"]
+    }
+}
+output {
+  elasticsearch { 
+    hosts => ["https://guide-to-es.es.us-central1.gcp.cloud.es.io:443"]
+    user => "elastic"
+    password => "fRMrgyuBtROlOrrtZ0UvgttV"
+    index => "demo-json-drop"
+   }
+   stdout { }
+}
+
+sudo /usr/share/logstash/bin/logstash -f /etc/logstash/conf.d/json-read-drop.conf
+
+cd json-data
+wget http://media.sundog-soft.com/es/sample-json-split.log; cd ..
+
+sudo vi /etc/logstash/conf.d/json-split.conf
+input {
+    file {
+        #type => "json"
+        start_position => "beginning"
+        path => "/home/sawibrah/BigDataStuff/TopTech/ELK/2_Hands-on-course/json-data/sample-json-split.log"
+        sincedb_path => "/dev/null"
+    }
+}
+filter {
+    json {
+        source => "message"
+    }
+    split {
+        field => "[pastEvents]"
+    }
+    mutate {
+        remove_field => ["message", "@timestamp", "path", "host", "@version"]
+    }
+}
+output {
+  elasticsearch { 
+    hosts => ["https://guide-to-es.es.us-central1.gcp.cloud.es.io:443"]
+    user => "elastic"
+    password => "fRMrgyuBtROlOrrtZ0UvgttV"
+    index => "demo-json-split"
+   }
+   stdout { }
+}
+
+sudo /usr/share/logstash/bin/logstash -f /etc/logstash/conf.d/json-split.conf
+
+sudo vi /etc/logstash/conf.d/json-split-structured.conf
+input {
+    file {
+        #type => "json"
+        start_position => "beginning"
+        path => "/home/sawibrah/BigDataStuff/TopTech/ELK/2_Hands-on-course/json-data/sample-json-split.log"
+        sincedb_path => "/dev/null"
+    }
+}
+filter {
+    json {
+        source => "message"
+    }
+    split {
+        field => "[pastEvents]"
+    }
+    mutate {
+        add_field => {
+            "eventId"  => "%{[pastEvents][eventId]}"
+            "transactionId" => "%{[pastEvents][transactionId]}"
+        }
+        remove_field => ["message", "@timestamp", "path", "host", "@version", "pastEvents"]
+    }
+}
+output {
+  elasticsearch { 
+    hosts => ["https://guide-to-es.es.us-central1.gcp.cloud.es.io:443"]
+    user => "elastic"
+    password => "fRMrgyuBtROlOrrtZ0UvgttV"
+    index => "demo-json-split-structure"
+   }
+   stdout { }
+}
+
+sudo /usr/share/logstash/bin/logstash -f /etc/logstash/conf.d/json-split-structured.conf
+
+## Import from S3
+
+## Parsing with Grok
+
+Grok uses regex behind the since
+
+Email Grok Pattern
+%{EMAILADDRESS:client_email}
+
+Grok Debug Tool
+https://grokdebugger.com/
+
+mkdir -p 03-grok-example; cd 03-grok-example
+wget http://media.sundog-soft.com/es/sample.log; cd ..;
+wget http://media.sundog-soft.com/es/grok-example.conf
+
+sudo vi /etc/logstash/conf.d/grok-sample.conf
+input {
+  file {
+    path => "/home/sawibrah/BigDataStuff/TopTech/ELK/2_Hands-on-course/03-grok-examples/sample.log"
+    start_position => "beginning"
+    sincedb_path => "/dev/null"
+  }
+}
+filter {
+  grok {
+    match => { "message" => ['%{TIMESTAMP_ISO8601:time} %{LOGLEVEL:logLevel} %{GREEDYDATA:logMessage}'] }
+  }
+}
+output {
+   elasticsearch {
+     hosts => ["https://guide-to-es.es.us-central1.gcp.cloud.es.io:443"]
+     user => "elastic"
+     password => "fRMrgyuBtROlOrrtZ0UvgttV"
+     index => "demo-grok"
+  }
+
+stdout {}
+
+}
+
+sudo /usr/share/logstash/bin/logstash -f /etc/logstash/conf.d/grok-sample.conf
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET https://guide-to-es.es.us-central1.gcp.cloud.es.io/demo-grok/_search?pretty -d '
+{
+  "_source":[
+    "logLevel", "time", "logMessage"
+  ]
+}'
+
+#### What happens if fields don't match
+
+let's modify the sample.log and name it sample-strange.log
+
+sudo vi /etc/logstash/conf.d/grok-sample-strange.conf
+input {
+  file {
+    path => "/home/sawibrah/BigDataStuff/TopTech/ELK/2_Hands-on-course/03-grok-examples/sample-strange.log"
+    start_position => "beginning"
+    sincedb_path => "/dev/null"
+  }
+}
+filter {
+  grok {
+    match => { "message" => ['%{TIMESTAMP_ISO8601:time} %{LOGLEVEL:logLevel} %{GREEDYDATA:logMessage}'] }
+  }
+}
+output {
+   elasticsearch {
+     hosts => ["https://guide-to-es.es.us-central1.gcp.cloud.es.io:443"]
+     user => "elastic"
+     password => "fRMrgyuBtROlOrrtZ0UvgttV"
+     index => "demo-grok-strange"
+  }
+
+stdout {}
+
+}
+
+sudo /usr/share/logstash/bin/logstash -f /etc/logstash/conf.d/grok-sample-strange.conf
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET https://guide-to-es.es.us-central1.gcp.cloud.es.io/demo-grok-strange/_search?pretty -d '
+{
+}'
+
+#### How to handle that case
+
+wget http://media.sundog-soft.com/es/grok-example-02.conf
+
+sudo vi /etc/logstash/conf.d/grok-example-02.conf
+input {
+  file {
+    path => "/home/sawibrah/BigDataStuff/TopTech/ELK/2_Hands-on-course/03-grok-examples/sample-strange.log"
+    start_position => "beginning"
+    sincedb_path => "/dev/null"
+  }
+}
+filter {
+  grok {
+    match => { "message" => [
+              '%{TIMESTAMP_ISO8601:time} %{LOGLEVEL:logLevel} %{GREEDYDATA:logMessage}',
+              '%{IP:clientIP} %{WORD:httpMethod} %{URIPATH:url}'
+              ] }
+}
+}
+output {
+   elasticsearch {
+     hosts => ["https://guide-to-es.es.us-central1.gcp.cloud.es.io:443"]
+     user => "elastic"
+     password => "fRMrgyuBtROlOrrtZ0UvgttV"
+     index => "demo-grok-multiple"
+  }
+
+stdout {}
+
+}
+
+sudo /usr/share/logstash/bin/logstash -f /etc/logstash/conf.d/grok-example-02.conf
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET https://guide-to-es.es.us-central1.gcp.cloud.es.io/demo-grok-multiple/_search?pretty -d '
+{
+  "_source":{
+    "excludes": ["@timestamp", "host", "path"]
+    }
+}'
+
+## Parsing common log patterns with grok
+mkdir conf.d
+git clone https://github.com/coralogix-resources/logstash.git conf.d
+
+wget http://media.sundog-soft.com/es/grok.txt  # all the code below (some are adjusted for our need)
+
+NGINX ACCESS LOGS
+
+1.
+
+https://raw.githubusercontent.com/coralogix-resources/logstash/master/nginx/access.log
+
+2. Paste the grok filter part in the grok debug on kibana and check all is fine
+
+https://grokdebug.herokuapp.com/
+
+3. adapt the conf file to your cluster cred and data path
+
+https://raw.githubusercontent.com/coralogix-resources/logstash/master/nginx/nginx-access-final.conf
+
+sudo vi /etc/logstash/conf.d/nginx-access-final.conf
+input {
+file {
+   path => ["/home/sawibrah/BigDataStuff/TopTech/ELK/2_Hands-on-course/conf.d/nginx/access.log"]
+   start_position => "beginning"
+   sincedb_path => "/dev/null"
+ }
+}
+filter {
+      grok {
+        match => { "message" => ["%{IPORHOST:remote_ip} - %{DATA:user_name} \[%{HTTPDATE:access_time}\] \"%{WORD:http_method} %{DATA:url} HTTP/%{NUMBER:http_version}\" %{NUMBER:response_code} %{NUMBER:body_sent_bytes} \"%{DATA:referrer}\" \"%{DATA:agent}\""] }
+        remove_field => "message"
+      }
+      mutate {
+        add_field => { "read_timestamp" => "%{@timestamp}" }
+      }
+      date {
+        match => [ "timestamp", "dd/MMM/YYYY:H:m:s Z" ]
+        remove_field => "timestamp"
+      }
+}
+output{
+  elasticsearch{
+    hosts => ["https://guide-to-es.es.us-central1.gcp.cloud.es.io:443"]
+     user => "elastic"
+     password => "fRMrgyuBtROlOrrtZ0UvgttV" 
+    index => "nginx-access-logs-02" 
+  }
+  stdout { 
+    codec => "rubydebug"
+   }
+}
+
+sudo /usr/share/logstash/bin/logstash -f /etc/logstash/conf.d/nginx-access-final.conf
+
+4. Check all went well
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET https://guide-to-es.es.us-central1.gcp.cloud.es.io/nginx-access-logs-02/_search?pretty -d'{
+  "size": 1, 
+  "track_total_hits": true,
+  "query": {
+    "bool": {
+      "must_not": [
+        {
+          "term": {
+            "tags.keyword": "_grokparsefailure"
+          }
+        }
+      ]
+    }
+  }
+}'
+
+############### Do the same for the logs below ###################
+IIS LOGS (internet information services)
+
+5.
+
+https://raw.githubusercontent.com/coralogix-resources/logstash/master/iis/u_ex171118-sample.log
+
+6.
+
+https://raw.githubusercontent.com/coralogix-resources/logstash/master/iis/iis-final-working.conf
+
+7.
+
+curl -XGET "http://localhost:9200/iis-log/_search?pretty" -d'{
+  "size": 1, 
+  "track_total_hits": true,
+  "query": {
+    "bool": {
+      "must_not": [
+        {
+          "term": {
+            "tags.keyword": "_grokparsefailure"
+          }
+        }
+      ]
+    }
+  }
+}'
+
+MONGODB LOGS
+
+8. 
+
+https://raw.githubusercontent.com/coralogix-resources/logstash/master/mongodb/mongodb.log
+
+9.
+
+https://raw.githubusercontent.com/coralogix-resources/logstash/master/mongodb/mongodb-final.conf
+
+10.
+
+curl -XGET "http://localhost:9200/mongo-logs-01/_search?pretty" -d'{
+  "size": 1, 
+  "track_total_hits": true,
+  "query": {
+    "bool": {
+      "must_not": [
+        {
+          "term": {
+            "tags.keyword": "_grokparsefailure"
+          }
+        }
+      ]
+    }
+  }
+}'
+
+USER AGENT MAPPING AND IP TO GEO LOCATION MAPPING IN LOGS
+
+11.
+
+https://raw.githubusercontent.com/coralogix-resources/logstash/master/apache/access_log
+
+12.
+
+https://raw.githubusercontent.com/coralogix-resources/logstash/master/apache/apache-access-enriched.conf
+
+13.
+
+curl -XGET "http://localhost:9200/apache-logs/_search?pretty" -d'{
+  "size": 1,
+  "track_total_hits": true,
+  "query": {
+  "bool": {
+    "must_not": [
+      {
+        "term": {
+          "tags.keyword": "_grokparsefailure"
+        }
+      }
+    ]
+  }
+  }
+}'
+
+ELASTICSEARCH LOGS
+
+14.
+
+https://raw.githubusercontent.com/coralogix-resources/logstash/master/elasticsearch_logs/elasticsearch.log
+
+15.
+
+https://raw.githubusercontent.com/coralogix-resources/logstash/master/elasticsearch_logs/es-logs-final.conf
+
+16.
+
+curl -XGET "http://localhost:9200/es-test-logs/_search?pretty" -d'{
+  "size": 1, 
+  "query": {
+    "bool": {
+      "must_not": [
+        {
+          "match": {
+            "tags": "multiline"
+          }
+        }
+      ]
+    }
+  }
+}'
+
+ELASTICSEARCH SLOW LOGS
+
+17.
+
+https://raw.githubusercontent.com/coralogix-resources/logstash/master/elasticsearch_slowlogs/es_slowlog.log
+
+18.
+
+https://raw.githubusercontent.com/coralogix-resources/logstash/master/elasticsearch_slowlogs/es-slowlog-final.conf
+
+19.
+
+curl -XGET "http://localhost:9200/es-slow-logs/_search?pretty" -d'{  "size": 1}'
+
+MYSQL SLOW LOGS
+
+20.
+
+https://raw.githubusercontent.com/coralogix-resources/logstash/master/mysql_slowlogs/mysql-slow.log
+
+21.
+
+https://raw.githubusercontent.com/coralogix-resources/logstash/master/mysql_slowlogs/mysql-slowlogs.conf
+
+22.
+
+curl -XGET "http://localhost:9200/mysql-slowlogs-01/_search?pretty" -d'{
+
+  "size":1,
+  "query": {
+    "bool": {
+    "must_not": [
+      {
+        "term": {
+          "tags.keyword": "_grokparsefailure"
+        }
+      }
+    ]
+  }
+  }
+
+}'
+
+AWS ELASTIC LOAD BALANCER
+
+23.
+
+https://raw.githubusercontent.com/coralogix-resources/logstash/master/aws_elb/elb_logs.log
+
+24.
+
+https://raw.githubusercontent.com/coralogix-resources/logstash/master/aws_elb/aws-elb.conf
+
+25.
+
+curl -XGET "http://localhost:9200/aws-elb-logs/_search?pretty" -d'
+{
+  "size": 1,
+  "query": {
+    "bool": {
+      "must_not": [
+        {
+        "term": {
+          "tags": {
+            "value": "_grokparsefailure"
+          }
+        }
+      }
+      ]
+    }
+  }
+}'
+
+AWS APPLICATION LOAD BALANCER
+
+26.
+
+https://raw.githubusercontent.com/coralogix-resources/logstash/master/aws_alb/alb_logs.log
+
+27.
+
+https://raw.githubusercontent.com/coralogix-resources/logstash/master/aws_alb/aws-alb.conf
+
+28.
+
+curl -XGET "http://localhost:9200/aws-alb-logs/_search?pretty" -d'
+{
+  "size": 1,
+  "query": {
+    "bool": {
+      "must_not": [
+        {"term": {
+          "tags": {
+            "value": "_grokparsefailure"
+          }
+        }
+      }
+      ]
+    }
+  }
+}'
+
+AWS CLOUDFRONT
+
+29.
+
+https://raw.githubusercontent.com/coralogix-resources/logstash/master/aws_cloudfront/cloudfront_logs.log
+
+30.
+
+https://raw.githubusercontent.com/coralogix-resources/logstash/master/aws_cloudfront/aws-cloudfront.conf
+
+31.
+
+curl -XGET "http://localhost:9200/aws-cloudfront-logs/_search?pretty" -d'
+{
+  "query": {
+    "bool": {
+      "must_not": [
+        {"term": {
+          "tags": {
+            "value": "_grokparsefailure"
+          }
+        }
+      }
+      ]
+    }
+  }
+}'
+
+CLEANUP
+
+curl -XDELETE localhost:9200/nginx-access-logs-02
+
+curl -XDELETE localhost:9200/iis-log
+
+curl -XDELETE localhost:9200/mongo-logs-01
+
+curl -XDELETE localhost:9200/apache-logs
+
+curl -XDELETE localhost:9200/es-test-logs
+
+curl -XDELETE localhost:9200/es-slow-logs
+
+curl -XDELETE localhost:9200/mysql-slowlogs-01
+
+curl -XDELETE localhost:9200/aws-elb-logs
+
+curl -XDELETE localhost:9200/aws-alb-logs
+
+curl -XDELETE localhost:9200/aws-cloudfront-logs
+
+
+## Input plugins
+mkdir logstash-input-plugins
+git clone https://github.com/coralogix-resources/logstash-input-plugins.git logstash-input-plugins
+
+### Heartbeat input plugins
+
+sudo vi /etc/logstash/conf.d/heartbeat.conf
+input {
+  heartbeat {
+    message => "ok"
+    interval => 5
+    type => "heartbeat"
+  }
+}
+
+output {
+  if [type] == "heartbeat" {
+     elasticsearch {
+     hosts => ["https://guide-to-es.es.us-central1.gcp.cloud.es.io:443"]
+     user => "elastic"
+     password => "fRMrgyuBtROlOrrtZ0UvgttV"
+     index => "heartbeat"
+ 	 }
+  }
+ stdout {
+  codec => "rubydebug"
+  }
+ 
+}
+
+sudo /usr/share/logstash/bin/logstash -f /etc/logstash/conf.d/heartbeat.conf
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET https://guide-to-es.es.us-central1.gcp.cloud.es.io/heartbeat/_search?pretty -d'{ "size": 1}'
+
+### Generate input plugin
+
+sudo vi /etc/logstash/conf.d/generator.conf
+input {
+    generator {
+    lines => [
+        '{"id": 1,"first_name": "Ford","last_name": "Tarn","email": "ftarn0@go.com","gender": "Male","ip_address": "112.29.200.6"}', 
+        '{"id": 2,"first_name": "Kalila","last_name": "Whitham","email": "kwhitham1@wufoo.com","gender": "Female","ip_address": "98.98.248.37"}'
+    ]
+    count => 0
+    codec =>  "json"
+    }
+}
+output {
+     elasticsearch {
+     hosts => ["https://guide-to-es.es.us-central1.gcp.cloud.es.io:443"]
+     user => "elastic"
+     password => "fRMrgyuBtROlOrrtZ0UvgttV"
+     index => "generator"
+    } 
+  stdout {
+    codec => "rubydebug"
+    }
+}
+
+sudo /usr/share/logstash/bin/logstash -f /etc/logstash/conf.d/generator.conf
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET https://guide-to-es.es.us-central1.gcp.cloud.es.io/generator/_search?pretty -d'{ "size": 1}'
+
+### Dead letter queue
+what happens when logstash fails to process an event, normally the event is drop and we hence lose it, but in many cases it will be useful to collect those docs for further inspections, to make it possible logstash provide a queue name dead letter queue the event that are dropped will be collected on that queue using its plugin on can then process that event
+
+mkdir dlq;
+sudo chown -R logstash:logstash dlq
+--enable dlq and setting its path in the conf file
+sudo vi /etc/logstash/logstash.yml
+-dead_letter_queue.enable: true
+-path.dead_letter_queue:/home/sawibrah/BigDataStuff/TopTech/ELK/2_Hands-on-course/dlq
+
+
+sudo vi /etc/logstash/conf.d/dlq-data-01-ingest.conf
+input {
+  file {
+    start_position => "beginning"
+    path => "/home/sawibrah/BigDataStuff/TopTech/ELK/2_Hands-on-course/logstash-input-plugins/dead-letter-queue/sample-data-dlq.json"
+    sincedb_path => "/dev/null"
+  }
+}
+filter {
+    json {
+        source => "message"
+    }
+}
+output {
+   elasticsearch {
+     hosts => ["https://guide-to-es.es.us-central1.gcp.cloud.es.io:443"]
+     user => "elastic"
+     password => "fRMrgyuBtROlOrrtZ0UvgttV"
+     index => "dlq-sample-data"
+  }
+}
+
+sudo /usr/share/logstash/bin/logstash --path.settings /etc/logstash -f /etc/logstash/conf.d/dlq-data-01-ingest.conf
+
+--check number of docs indexed
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET https://guide-to-es.es.us-central1.gcp.cloud.es.io/dlq-sample-data/_search?pretty -d'{"track_total_hits": true, "size":0 }'
+
+Let deal with the dead queue
+
+sudo vi /etc/logstash/conf.d/dlq.conf
+input {
+  dead_letter_queue {
+    path => "/home/sawibrah/BigDataStuff/TopTech/ELK/2_Hands-on-course/dlq"
+    # We can also add "commit_offsets => true" here if we want Logstash to continue
+    # where it left off, instead of re-processing all events in DLQ at subsequent runs
+  }
+}
+
+output {
+   elasticsearch {
+     hosts => ["https://guide-to-es.es.us-central1.gcp.cloud.es.io:443"]
+     user => "elastic"
+     password => "fRMrgyuBtROlOrrtZ0UvgttV"
+     index => "dlq-01"
+  }
+stdout {
+  codec => "rubydebug"
+}
+}
+
+sudo /usr/share/logstash/bin/logstash --path.settings /etc/logstash -f /etc/logstash/conf.d/dlq.conf
+
+--check number of docs indexed
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET https://guide-to-es.es.us-central1.gcp.cloud.es.io/dlq-01/_search?pretty -d'{"size":1 }'
+
+### http puller plugins
+
+### twiter plugins
+
+### Syslog Deep Dive (2 methods)
+
+sudo head -10 /var/log/syslog
+
+May 30 00:05:54 sawibrah systemd-udevd[32230]: Process '/bin/chmod 0666 ' failed with exit code 1.
+
+Let's modify the syslog to transmit data trough tcp connection
+sudo vi /etc/rsyslog.d/50-default.conf
+*.*            @@127.0.0.1:10514        # commented on the config file after lab
+
+sudo systemctl restart rsyslog.service
+
+git clone https://github.com/coralogix-resources/logstash-syslog.git logstash-syslog
+
+Let's consider one line of the systemd in the syslog
+sudo grep 'systemd' /var/log/syslog
+May 30 19:09:05 sawibrah systemd-udevd[10801]: Process '/bin/chmod 0666 ' failed with exit code 1.
+
+open Grok debugger in Kibana paste the aboved copied line and the below in their respective section and check if all is fine
+%{SYSLOGTIMESTAMP:syslog_timestamp} %{SYSLOGHOST:syslog_hostname} %{DATA:syslog_program}(?:\[%{POSINT:syslog_pid}\])?: %{GREEDYDATA:syslog_message}
+
+sudo vi /etc/logstash/conf.d/syslog-tcp-forward.conf
+input {
+  tcp {
+    port => 10514
+    type => syslog
+  }
+}
+
+filter {
+  if [type] == "syslog" {
+    grok {
+      match => { "message" => "%{SYSLOGTIMESTAMP:syslog_timestamp} %{SYSLOGHOST:syslog_hostname} %{DATA:syslog_program}(?:\[%{POSINT:syslog_pid}\])?: %{GREEDYDATA:syslog_message}" }
+      add_field => [ "received_at", "%{@timestamp}" ]
+      add_field => [ "received_from", "%{host}" ]
+    }
+    date {
+      match => [ "syslog_timestamp", "MMM  d HH:mm:ss", "MMM dd HH:mm:ss" ]
+      target => "syslog_timestamp"
+    }
+  }
+}
+
+output{
+  elasticsearch{
+    hosts => ["https://guide-to-es.es.us-central1.gcp.cloud.es.io:443"]
+     user => "elastic"
+     password => "fRMrgyuBtROlOrrtZ0UvgttV"
+    index => "syslog-received-on-tcp" 
+  }
+  stdout { 
+    codec => "rubydebug"
+   }
+}
+
+
+sudo /usr/share/logstash/bin/logstash --path.settings /etc/logstash -f /etc/logstash/conf.d/syslog-tcp-forward.conf
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET https://guide-to-es.es.us-central1.gcp.cloud.es.io/syslog-received-on-tcp/_search?pretty 
+
+-- The other scenario (monitoring with logstash)
+
+
+vi /etc/logstash/conf.d/logstash-monitoring-syslog.conf
+input {
+  file {
+     path => ["/var/log/syslog"]
+     type => "syslog"
+     start_position => "beginning"
+   }
+}
+filter {
+       if [type] == "syslog" {
+    grok {
+      match => { "message" => "%{SYSLOGTIMESTAMP:syslog_timestamp} %{SYSLOGHOST:syslog_hostname} %{DATA:syslog_program}(?:\[%{POSINT:syslog_pid}\])?: %{GREEDYDATA:syslog_message}" }
+      add_field => [ "received_at", "%{@timestamp}" ]
+      add_field => [ "received_from", "%{host}" ]
+    }
+    date {
+      match => [ "syslog_timestamp", "MMM  d HH:mm:ss", "MMM dd HH:mm:ss" ]
+      target => "syslog_timestamp"
+    }
+  }
+}
+output{
+  elasticsearch{
+    hosts => ["https://guide-to-es.es.us-central1.gcp.cloud.es.io:443"]
+     user => "elastic"
+     password => "fRMrgyuBtROlOrrtZ0UvgttV"
+    index => "syslog-monitor" 
+  }
+}
+
+sudo /usr/share/logstash/bin/logstash --path.settings /etc/logstash -f /etc/logstash/conf.d/logstash-monitoring-syslog.conf
+
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET https://guide-to-es.es.us-central1.gcp.cloud.es.io/syslog-monitor/_search?pretty 
+
+
+### Elastick and Kafka
+
+input {
+    kafka {
+        bootstrap_servers => "localhost:9092"
+        topics => ["kafka-logs"]
+    }
+}
+
+### Elastick and Spark
+
+wget http://media.sundog-soft.com/es/fakefriends.csv
+
+spark-shell --packages org.elasticsearch:elasticsearch-spark-30_2.12:8.7.1
+
+import org.elasticsearch.spark.sql._
+
+case class Person(ID:Int, name:String, age:Int, numFriends:Int)
+
+def mapper(line:String): Person = {
+    val fields = line.split(",")
+    val person: Person = Person(fields(0).toInt, fields(1), fields(2).toInt, fields(3).toInt)
+    return person
+}
+
+import spark.implicits._
+val lines=spark.sparkContext.textFile("fakefriends.csv")
+val people=lines.map(mapper).toDF()
+
+
+// Set the Elasticsearch endpoint, username, and password
+val endpoint = "https://guide-to-es.es.us-central1.gcp.cloud.es.io"
+val username = "elastic"
+val password = "fRMrgyuBtROlOrrtZ0UvgttV"
+
+// Configure Elasticsearch properties
+val esConfig = Map(
+  "es.nodes" -> endpoint,
+  "es.port" -> "443",
+  "es.net.http.auth.user" -> username,
+  "es.net.http.auth.pass" -> password,
+)
+
+// Assume you have a DataFrame named 'df' that you want to save to Elasticsearch
+val index = "spark-people"
+people.saveToEs(index, esConfig)
+
+// Trying second approach
+// Set the Elasticsearch endpoint, username, and password
+val endpoint = "https://guide-to-es.es.us-central1.gcp.cloud.es.io"
+val username = "elastic"
+val password = "fRMrgyuBtROlOrrtZ0UvgttV"
+
+// Configure Elasticsearch properties
+val esConfig = Map(
+  "es.nodes" -> endpoint,
+  "es.port" -> "443",
+  "es.net.http.auth.user" -> username,
+  "es.net.http.auth.pass" -> password,
+  "es.nodes.discovery" -> "false"
+)
+
+// Assume you have a DataFrame named 'df' that you want to save to Elasticsearch
+people.write.format("org.elasticsearch.spark.sql").options(esConfig).
+  option("es.resource", "fake-friends").save()
+

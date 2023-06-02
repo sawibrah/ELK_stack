@@ -1,0 +1,65 @@
+
+# Kibana
+
+## Exercice
+
+Find the longest shakespeare plays
+Create a vertical bar chart that aggregates the count of documents by play name in descending order.
+
+## Kibana Lens
+
+Good for structured and time oriented data
+
+--Get Es version
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XGET "https://guide-to-es.es.us-central1.gcp.cloud.es.io/"
+
+"8.7.1"
+
+--install metricbeat-8.7.1
+
+sudo apt install metricbeat-8.7.1
+sudo apt install stress
+stress --ncpu 8 --timeout 120
+stress --vm 5 --timeout 180
+
+### Kibana Management
+
+#### Spaces
+
+#### Migrations Visualizations
+
+#### Advanced Settings
+
+## Kibana Canvas
+Workpad, page, Elements
+
+wget https://raw.githubusercontent.com/elastic/examples/master/Common%20Data%20Formats/nginx_json_logs/nginx_json_logs
+ 
+awk '{print "{\"index\":{}}\n" $0}' nginx_json_logs > nginx_json_logs_bulk
+ 
+ 
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV -H "Content-Type:application/json" -XPUT "https://guide-to-es.es.us-central1.gcp.cloud.es.io/nginx" \
+-d '{
+   "settings": {
+       "number_of_shards": 1,
+       "number_of_replicas": 0
+   },
+   "mappings": {
+       "properties": {
+           "time": {"type":"date","format":"dd/MMM/yyyy:HH:mm:ss Z"},
+           "response": {"type":"keyword"}
+       }
+   }
+}'
+ 
+curl -u elastic:fRMrgyuBtROlOrrtZ0UvgttV --header 'Content-Type: application/x-ndjson' -XPOST "https://guide-to-es.es.us-central1.gcp.cloud.es.io/nginx/_bulk" --data-binary '@nginx_json_logs_bulk' | jq '.errors'
+
+--on kibana devTools
+GET /_sql?format=txt
+{
+ "query": """
+ SELECT sum(bytes) as total_transferred from nginx
+ group by remote_ip
+ order by total_transferred desc
+ """ 
+}
